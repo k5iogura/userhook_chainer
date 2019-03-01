@@ -12,15 +12,15 @@ rtv = runtimeviz()
 class NeuralNet(chainer.Chain):
     def __init__(self, n_units, n_out):
         super().__init__(
-            l1=rtv.regist_lnk('l1',L.Linear(None, n_units)),
-            l2=rtv.regist_lnk('l2',L.Linear(n_units, n_units)),
-            l3=rtv.regist_lnk('l3',L.Linear(n_units, n_out)),
+            lx1=L.Linear(None, n_units),
+            ly2=L.Linear(n_units, n_units),
+            lz3=L.Linear(n_units, n_out),
         )
 
     def __call__(self, x):
-        h1 = F.relu(self.l1(x))
-        h2 = F.relu(self.l2(h1))
-        h3 = self.l3(h2)
+        h1 = F.relu(self.lx1(x))
+        h2 = F.relu(self.ly2(h1))
+        h3 = self.lz3(h2)
 #        rtv.regist_var('h1', h1)
 #        rtv.regist_var('h2', h2)
 #        rtv.regist_var('h3', h3)
