@@ -118,7 +118,7 @@ class UserHook(link_hook.LinkHook):
     def template_out(self,name):
         print(userfunc_tp,name)
         with open(userfunc_tp,'a') as f:
-            f.write("def %s(in,out):\n"%(name))
+            f.write("def %s(_in,_out):\n"%(name))
             f.write("    pass\n\n")
 
     def forward_postprocess(self, args):
@@ -153,6 +153,7 @@ class UserHook(link_hook.LinkHook):
         assert link.xp == self.xp
 
         # exec usrhooks
+        _in=_out=[]
         userhook_func = "%s_%s"%(args.link.name, args.link.__class__.__name__)
         userhook_call = "%s_%s(_in,_out)"%(args.link.name, args.link.__class__.__name__)
         self.template_out(userhook_func)
