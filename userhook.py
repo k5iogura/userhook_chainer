@@ -12,10 +12,12 @@ from chainer import link_hook
 import chainer
 from pdb import *
 from inspect import *
+userfunc_ex = True
 userfunc_py = "userfunc.py"
 userfunc_tp = "userfunc_template.py"
 if not os.path.exists(userfunc_py):
     print("!! Still not created UserHook python named `"+userfunc_py+"`")
+    userfunc_ex = False
 else:
     try:
         py_func = os.path.splitext(userfunc_py)[0]
@@ -76,12 +78,14 @@ class UserHook(link_hook.LinkHook):
 
     name = 'TimerHook'
 
-    def __init__(self,verbose=False):
+    def __init__(self,save_all=True,save_dir='dnn_params',verbose=False):
         self.call_history = []
         self._running_stack = []
         self._depth = 0
         self._total_time = 0
         self.v=verbose
+        self.save_all=save_all
+        self.save_dir=save_dir
 
     def _preprocess(self):
         if self.xp is numpy:
@@ -123,7 +127,13 @@ class UserHook(link_hook.LinkHook):
         #print(userfunc_tp,name)
         with open(userfunc_tp,'a') as f:
             f.write("def %s(_in,_out):\n"%(name))
+            f.write("    _name='"+name+"'\n")
             f.write("    pass\n\n")
+
+    def save_params(self,_in,_out,_name):
+        for k in _in.link.__dict__['_params']:
+            filename = _name + '_' + k
+            numpy.save(filename, _in.link.__dict__[k].data)
 
     def forward_postprocess(self, args):
         if self.v:print("forward_posprocess",args.link)
@@ -162,12 +172,15 @@ class UserHook(link_hook.LinkHook):
         _in =args
         userhook_func = "%s_%s"%(args.link.name, args.link.__class__.__name__)
         userhook_call = "%s_%s(_in,_out)"%(args.link.name, args.link.__class__.__name__)
-        #_out.data[0]=np.zeros(_out.data[0].shape,dtype=np.float32)
         try:
-            exec(userhook_call)
+            if userfunc_ex: exec(userhook_call)
         except:
             print("error in",userhook_call)
+
         self.template_out(userhook_func)
+        if self.save_all:
+            os.makedirs(self.save_dir,exist_ok=True)
+            self.save_params(_in, _out, self.save_dir + '/' + userhook_func)
 
         self._postprocess(link)
 
