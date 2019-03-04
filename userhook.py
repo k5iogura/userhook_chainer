@@ -131,6 +131,7 @@ class UserHook(link_hook.LinkHook):
             f.write("    pass\n\n")
 
     def save_params(self,_in,_out,_name):
+        numpy.save(_name+'_in', _in.args[0])
         for k in _in.link.__dict__['_params']:
             filename = _name + '_' + k
             numpy.save(filename, _in.link.__dict__[k].data)
