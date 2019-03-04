@@ -1,7 +1,7 @@
 import numpy as np
 from math import *
 import sys,os
-import PIL as p
+from PIL import Image
 
 
 def _wh_sqrt(n):
@@ -67,10 +67,11 @@ print("* snipet WH",iW,iH)
 print("* grid   WH",gW,gH)
 print("* resize WH",640,480)
 
+canvas = Image.new('L',(pW,pH))
 for gy in range(gH):
     for gx in range(gW):
+        #snipet = param[0][gy*gH+gx-1]
         print("%8d%8d%8d%8d"%(gx,gy,gx*iW,gy*iH))
         pass
-
 
 
