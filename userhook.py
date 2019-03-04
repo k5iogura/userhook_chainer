@@ -19,7 +19,7 @@ if not os.path.exists(userfunc_py):
 else:
     try:
         py_func = os.path.splitext(userfunc_py)[0]
-        print("importing",userfunc_py)
+#        print("importing",userfunc_py)
         exec("from "+ py_func + " import *")
     except:
         print("importing error on ",userfun_py)
@@ -76,11 +76,12 @@ class UserHook(link_hook.LinkHook):
 
     name = 'TimerHook'
 
-    def __init__(self):
+    def __init__(self,verbose=False):
         self.call_history = []
         self._running_stack = []
         self._depth = 0
         self._total_time = 0
+        self.v=verbose
 
     def _preprocess(self):
         if self.xp is numpy:
@@ -125,7 +126,7 @@ class UserHook(link_hook.LinkHook):
             f.write("    pass\n\n")
 
     def forward_postprocess(self, args):
-        print("forward_posprocess",args.link)
+        if self.v:print("forward_posprocess",args.link)
 
         # info function and variable name
         #print(args.link.name, args.link.__class__.__name__)
@@ -133,11 +134,12 @@ class UserHook(link_hook.LinkHook):
         # info inputs of link
         # chainer.variable.Parameter has `name` attribute
         # type(args.args[0]) is ndarray or chainer.variable.variable
-        print("input", args.args[0].shape, type(args.args[0]))
+        if self.v:print("input", args.args[0].shape, type(args.args[0]))
 
         # info of parameters method-1
-        for k in args.link.__dict__['_params']:
-            print(k, args.link.__dict__[k].shape)
+        if self.v:
+            for k in args.link.__dict__['_params']:
+                print(k, args.link.__dict__[k].shape)
 
         # info of parameters method-2
         #params=[ j for i,j in getmembers(args.link) if j.__class__.__name__=="Parameter"]
@@ -145,7 +147,7 @@ class UserHook(link_hook.LinkHook):
         #    print(p.name,p.shape)
 
         # info output of link
-        print("output", args.out.shape, type(args.out))
+        if self.v:print("output", args.out.shape, type(args.out))
         #print(args.out)
 
         # example to update feature-map to Zero!
