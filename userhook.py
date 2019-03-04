@@ -134,6 +134,7 @@ class UserHook(link_hook.LinkHook):
         for k in _in.link.__dict__['_params']:
             filename = _name + '_' + k
             numpy.save(filename, _in.link.__dict__[k].data)
+        numpy.save(_name+'_out', _out.data[0])
 
     def forward_postprocess(self, args):
         if self.v:print("forward_posprocess",args.link)
