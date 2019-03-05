@@ -6,9 +6,6 @@ import chainer.links as L
 from chainer import serializers
 from pdb import *
 
-from runtimeviz import runtimeviz
-rtv = runtimeviz()
-
 class NeuralNet(chainer.Chain):
     def __init__(self, n_units, n_out):
         super().__init__(
@@ -21,11 +18,6 @@ class NeuralNet(chainer.Chain):
         h1 = F.relu(self.lx1(x))
         h2 = F.relu(self.ly2(h1))
         h3 = self.lz3(h2)
-#        rtv.regist_var('h1', h1)
-#        rtv.regist_var('h2', h2)
-#        rtv.regist_var('h3', h3)
-#        rtv.list()
-#        rtv.regist_end()
         return h3
 
 def check_accuracy(model, xs, ts):
