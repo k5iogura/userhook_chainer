@@ -17,6 +17,15 @@ Prepare chainer and cupy,
  # python3 -m pip install cupy-cuda90 # if your CUDA version is 9.0
 ```
 
+Setup user environmental variables in .bashrc for CUDA,  
+```
+export LD_LIBRARY_PATH=/usr/local/lib:./:$LD_LIBRARY_PATH
+export CUDA_PATH=/usr/local/cuda
+export CUDA_ROOT_DIR=/usr/local/cuda
+export PATH=$CUDA_PATH/bin:$PATH
+export LD_LIBRARY_PATH=$CUDA_PATH/lib64:$LD_LIBRARY_PATH
+```
+
 Check,  
 ```
  $ python3
