@@ -4,6 +4,7 @@ import sys
 import time
 
 import numpy
+import cupy
 
 from chainer.backends import cuda
 from chainer import link_hook
@@ -92,7 +93,7 @@ class UserHook(link_hook.LinkHook):
             start = _get_time()
             self._running_stack.append(start)
         else:
-            assert self.xp is cuda.cupy
+            assert self.xp is cupy
             start = cuda.Event()
             stop = cuda.Event()
             start.record()
@@ -109,7 +110,7 @@ class UserHook(link_hook.LinkHook):
             stop = _get_time()
             elapsed_time = stop - start
         else:
-            assert self.xp is cuda.cupy
+            assert self.xp is cupy
             start, stop = self._running_stack.pop()
             stop.record()
             stop.synchronize()
@@ -131,15 +132,20 @@ class UserHook(link_hook.LinkHook):
             f.write("    pass\n\n")
 
     def save_params(self,_in,_out,_name):
-        if isinstance(_in.args[0], numpy.ndarray):
-            numpy.save(_name+'_in', _in.args[0])
+        if self.xp is numpy:
+            arrayM = numpy
+        if self.xp is cupy:
+            arrayM = cupy
+
+        if isinstance(_in.args[0], arrayM.ndarray):
+            arrayM.save(_name+'_in', _in.args[0])
         else:
-            numpy.save(_name+'_in', _in.args[0].data[0])
+            arrayM.save(_name+'_in', _in.args[0].data[0])
 
         for k in _in.link.__dict__['_params']:
             filename = _name + '_' + k
-            numpy.save(filename, _in.link.__dict__[k].data)
-        numpy.save(_name+'_out', _out.data[0])
+            arrayM.save(filename, _in.link.__dict__[k].data)
+        arrayM.save(_name+'_out', _out.data[0])
 
     def forward_postprocess(self, args):
         if self.v:print("forward_posprocess",args.link)
