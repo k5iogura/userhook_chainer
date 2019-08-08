@@ -32,7 +32,5 @@ Check,
  >>> import chainer as chainer
  >>> chainer.backends.cuda.available
  True
- >>> chainer.backends.cuda.cudnn_available
- True
 ```
 
