@@ -1,4 +1,6 @@
-import cupy
+try:
+    import cupy
+except:pass
 import chainer
 import chainer.computational_graph as c
 from chainer import serializers
@@ -32,7 +34,7 @@ _, test = chainer.datasets.get_mnist()
 txs, tts = test._datasets
 if args.gpu >= 0:
     txs = cupy.asarray(txs)
-x = txs[50].reshape((1,28,28,1))
+x = txs[:20].reshape((20,28,28,1))
 
 #fth = fTH()
 hook = UserHook()
