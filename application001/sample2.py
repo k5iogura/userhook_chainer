@@ -7,6 +7,7 @@ from userhook import UserHook
 import chainer.functions as F
 
 from train import *
+from distutils.dir_util import copy_tree
 from pdb import *
 
 from userfunc_var import VAR
@@ -40,3 +41,4 @@ def infer(inp):
 if __name__ == '__main__':
     var.n = -1 # No fault injection for Normal System case
     infer(inp=len(tts))
+    copy_tree('dnn_params', 'original_data')
