@@ -25,19 +25,18 @@ for k in range(16):              # k:fault pattern No.
 
     print("mylist=",d[k])   
 #    for i in range(0,2):       # i:number of feeding image
-    for i in range(0,1):        # no-used i
-        data_P = 10000          # data_P:amount of images a inference
+    data_P = 10000              # data_P:amount of images a inference
         
 #        if(i!=0):
 #            replace_sample(i)
-        print("input picture no=" ,i)
+#    print("input picture no=" ,i)
 #        subprocess.run("python3 sample.py",shell =True)
-        sample2.infer(data_P)
-        print('sample計算完了')
+    sample2.infer(data_P)
+    print('sample計算完了')
 #        rename =  "list" + str(k)+"_no-"+str(i)
-        rename =  "list%d_no%d-%d"%(k, 0, data_P-1)
-        rename2 = "cp -fr dnn_params "+ rename
-        subprocess.run(rename2,shell =True)
+    rename =  "list%d_no%d-%d"%(k, 0, data_P-1)
+    rename2 = "cp -fr dnn_params "+ rename
+    subprocess.run(rename2,shell =True)
 #    subprocess.run("cp sample_origin.py sample.py",shell =True)
         
 #subprocess.run("cp userfunc_origin.py userfunc.py",shell =True)
