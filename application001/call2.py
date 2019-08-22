@@ -1,3 +1,5 @@
+from distutils.dir_util import copy_tree
+from shutil import copy2
 import subprocess
 
 #from replace_sample import replace_sample
@@ -35,8 +37,9 @@ for k in range(16):              # k:fault pattern No.
     print('sample計算完了')
 #        rename =  "list" + str(k)+"_no-"+str(i)
     rename =  "list%d_no%d-%d"%(k, 0, data_P-1)
-    rename2 = "cp -fr dnn_params "+ rename
-    subprocess.run(rename2,shell =True)
+#    rename2 = "cp -fr dnn_params "+ rename
+#    subprocess.run(rename2,shell =True)
+    copy_tree("dnn_params", rename)
 #    subprocess.run("cp sample_origin.py sample.py",shell =True)
         
 #subprocess.run("cp userfunc_origin.py userfunc.py",shell =True)
