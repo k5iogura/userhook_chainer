@@ -41,4 +41,4 @@ def infer(inp):
 if __name__ == '__main__':
     var.n = -1 # No fault injection for Normal System case
     infer(inp=len(tts))
-    copy_tree('dnn_params', 'original_data')
+    copy_tree('dnn_params', 'original_data2')
