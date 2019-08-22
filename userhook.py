@@ -140,12 +140,12 @@ class UserHook(link_hook.LinkHook):
         if isinstance(_in.args[0], arrayM.ndarray):
             arrayM.save(_name+'_in', _in.args[0])
         else:
-            arrayM.save(_name+'_in', _in.args[0].data[0])
+            arrayM.save(_name+'_in', _in.args[0].data)
 
         for k in _in.link.__dict__['_params']:
             filename = _name + '_' + k
             arrayM.save(filename, _in.link.__dict__[k].data)
-        arrayM.save(_name+'_out', _out.data[0])
+        arrayM.save(_name+'_out', _out.data)
 
     def forward_postprocess(self, args):
         if self.v:print("forward_posprocess",args.link)
