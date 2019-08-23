@@ -19,7 +19,7 @@ from mylist_block import mylist
 
 d=mylist()
 #print(d)
-for k in range(16):              # k:fault pattern No.
+for k in range(784):              # k:fault pattern No.
 
     var.n = k
 #    if(k!=0):
@@ -28,6 +28,7 @@ for k in range(16):              # k:fault pattern No.
     print("mylist=",d[k])   
 #    for i in range(0,2):       # i:number of feeding image
     data_P = 10000              # data_P:amount of images a inference
+    data_P = 20
         
 #        if(i!=0):
 #            replace_sample(i)
