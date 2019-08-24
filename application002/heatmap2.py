@@ -64,9 +64,9 @@ for j in range(0,data_P): #オリジナルから行列を作成  # j:number of i
         hm = hm_a-hm_b
         zettaichi = np.abs(hm)
         hm_sum = zettaichi + hm_sum
-print(np.sum(nmap[:data_P]),np.sum(fmap[:784][:data_P]))
-print(np.sum(hm_sum))
-sys.exit(-1)
+print("Check sum-1:",np.sum(nmap[:data_P]),np.sum(fmap[:784][:data_P]))
+print("CHeck sum-2:",np.sum(hm_sum))
+#sys.exit(-1)
 
 #型変換等
 mylist=[0]
