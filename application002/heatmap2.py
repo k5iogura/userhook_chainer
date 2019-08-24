@@ -55,7 +55,7 @@ def load_faults(faultNo_list, Nimage):
 # load normal and fault systems
 nmap = load_normal(normal_dir)                  # nmap.shape = (imageNo, 50, 4)
 fmap = load_faults(faultNo_list, data_P)        # fmap.shape = (faultNo, imageNo, 50, 4)
-print('normal system results %d:%d'%(nmap.shape[0],fmap.shape[1]))
+print('normal system image = %d and fault system image = %d'%(nmap.shape[0],fmap.shape[1]))
 assert nmap.shape[0] >= fmap.shape[1], 'Unsufficiant normal system results'
 
 #jは推論する画像の番号、iは壊す範囲の左上座標のリストでの番号
