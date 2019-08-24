@@ -181,7 +181,7 @@ class UserHook(link_hook.LinkHook):
         try:
             if userfunc_ex: exec(userhook_call)
         except:
-            print("error in",userhook_call)
+            assert False,"Fatal Error in {}".format(userhook_call)
 
         self.template_out(userhook_func)
         if self.save_all:
