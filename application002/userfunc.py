@@ -22,8 +22,8 @@ def lx1_Linear(_in,_out):
 
     my_linear_out = linear(_in.args[0], _in.link.__dict__['W'], _in.link.__dict__['b'])
 
-    my_linear_out = my_linear_out.reshape(_out.data[0].shape)
-    _out.data[0] = my_linear_out.data
+    my_linear_out = my_linear_out.reshape(_out.data.shape)
+    _out.data = my_linear_out.data
 
 def ly2_Linear(_in,_out):
     pass
