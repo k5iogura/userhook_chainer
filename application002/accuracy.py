@@ -48,7 +48,8 @@ print("* faults patterns = %d Images = %d Predictions = %d"%(Nfaults, Nimages, N
 pred_normal = np.argmax(F.softmax(normal,axis=1).data,axis=1)
 pred_faults = np.argmax(F.softmax(faults,axis=2).data,axis=2)
 
-# truth := ( imakeNo )
+# truth := ( imageNo )
+# diffs := ( imageNo )
 truth = tts[:Nimages]
 diffs = truth - pred_normal
 diffs[diffs!=0] = 1
