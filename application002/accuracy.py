@@ -18,7 +18,7 @@ args = args.parse_args()
 
 faultNo_list = args.Faults if args.Faults is not None else range(args.faults)
 data_P       = args.images
-print("Run on Faults as",faultNo_list)
+print("* Run on Faults as",faultNo_list)
 
 # loadin from .npy
 def load_npz(gdir, filename='lz3_Linear_out.npy', n_units=10):
@@ -41,22 +41,24 @@ for k in faultNo_list:
 faults = np.asarray(buffers)
 Nfaults, Nimages, Npred = faults.shape
 normal = normal[:Nimages]
+print("* faults patterns = %d Images = %d Predictions = %d"%(Nfaults, Nimages, Npred))
 
 # pred_normal := ( imageNo )
 # pred_faults := ( faultNo, imageNo )
 pred_normal = np.argmax(F.softmax(normal,axis=1).data,axis=1)
 pred_faults = np.argmax(F.softmax(faults,axis=2).data,axis=2)
 
+# truth := ( imakeNo )
 truth = tts[:Nimages]
 diffs = truth - pred_normal
 diffs[diffs!=0] = 1
 error = 1.0*np.sum(diffs)/np.prod(pred_normal.shape)
-print("normal acc=",1.0-error)
+print("normal system acc=",1.0-error)
 
 diffs = np.zeros(Nimages,dtype=np.int)
 for f in range(Nfaults):
     diff = truth - pred_faults[f]
-    diffs[np.where(diff>0)[0]] += 1
+    diffs[np.where(diff!=0)[0]] += 1
 error = 1.0*np.sum(diffs)/np.prod(pred_faults.shape)
-print("faults acc=",1.0-error)
+print("faults system acc=",1.0-error)
 
