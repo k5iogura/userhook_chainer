@@ -7,8 +7,6 @@ import os,sys,argparse
 # from replace_userfunc import replace_userfunc
 
 import sample2
-tsx, tts = sample2.txs, sample2.tts
-data_N   = len(tts)
 from userfunc_var import VAR
 var = VAR()
 
