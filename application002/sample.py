@@ -43,5 +43,10 @@ if __name__ == '__main__':
     args.add_argument('-i','--images',type=int,default=0)
     args = args.parse_args()
     var.n = -1 # No fault injection for Normal System case
-    infer(inp=args.images)
-    copy_tree('dnn_params', 'original_data')
+    data_dir = 'original_data'
+    os.makedirs(data_dir, exist_ok=True)
+    for i in range(args.images):
+        infer(inp=i)
+        rename = "%s/No_%d"%(data_dir,i)
+        copy_tree('dnn_params', rename)
+
