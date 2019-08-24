@@ -23,7 +23,7 @@ def infer(inp):
     print("*** infer ***")
 #    inp=0
     a = txs[:inp]
-    print("inp=",inp)
+    print(":inp=:",inp)
     print("gt:input number  =" ,tts[:inp])
 
     x = txs[:inp].reshape((-1,28,28,1))

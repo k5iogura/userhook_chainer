@@ -40,21 +40,23 @@ def load_npz(gdir):
 
 # loading normal system result
 def load_normal(gdir):
-    x= load_npz(gdir)
-    return x
+    return load_npz(gdir)
 
 # loading faults system result
 def load_faults(faultNo_list, Nimage):
-    hm  = np.zeros((max(faultNo_list)+1, Nimage, 50, 4 )) # hm.shape = (faultNo, imageNo, 50, 4 )
+    fm  = np.zeros((max(faultNo_list)+1, Nimage, 50, 4 )) # fm.shape = (faultNo, imageNo, 50, 4 )
     for faultNo in faultNo_list:
         fault_dir = "list%d_no0-%d"%(faultNo, Nimage-1)
+        assert os.path.exists(fault_dir), 'Image dir such as {} not found'.format(fault_dir)
         h = load_npz(fault_dir)
-        hm[faultNo] = h
-    return hm
+        fm[faultNo] = h
+    return fm
 
 # load normal and fault systems
 nmap = load_normal(normal_dir)                  # nmap.shape = (imageNo, 50, 4)
 fmap = load_faults(faultNo_list, data_P)        # fmap.shape = (faultNo, imageNo, 50, 4)
+print('normal system results %d:%d'%(nmap.shape[0],fmap.shape[1]))
+assert nmap.shape[0] >= fmap.shape[1], 'Unsufficiant normal system results'
 
 #jは推論する画像の番号、iは壊す範囲の左上座標のリストでの番号
 
