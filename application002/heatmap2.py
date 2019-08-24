@@ -1,4 +1,4 @@
-import os,sys
+import os,sys,argparse
 from   pdb import *
 import numpy as np
 import seaborn as sns
@@ -7,6 +7,19 @@ import matplotlib as mpl
 import matplotlib.pyplot as plt
 import chainer
 from chainer import Variable
+
+args = argparse.ArgumentParser()
+args.add_argument('-i','--images',type=int,default=20)
+args.add_argument('-f','--faults',type=int,default=784, dest='faults')
+args.add_argument('-F','--Faults',type=int,nargs='+')
+args = args.parse_args()
+
+# spec to load
+#faultNo_list = range(args.faults)
+faultNo_list = args.Faults if args.Faults is not None else range(args.faults)
+data_P       = args.images
+normal_dir   = 'original_data2'
+print("Run on Faults as",faultNo_list)
 
 # loadin from .npy
 def load_npz(gdir):
@@ -39,14 +52,8 @@ def load_faults(faultNo_list, Nimage):
         hm[faultNo] = h
     return hm
 
-# spec to load
-faultNo_list = list(set([10,0,1]))              # ex. Fault-wise
-faultNo_list = range(784)                       # ex. About all faults
-data_P = 20
-normal  = 'original_data2'
-
 # load normal and fault systems
-nmap = load_normal(normal)                      # nmap.shape = (imageNo, 50, 4)
+nmap = load_normal(normal_dir)                  # nmap.shape = (imageNo, 50, 4)
 fmap = load_faults(faultNo_list, data_P)        # fmap.shape = (faultNo, imageNo, 50, 4)
 
 #jは推論する画像の番号、iは壊す範囲の左上座標のリストでの番号
@@ -64,9 +71,8 @@ for j in range(0,data_P): #オリジナルから行列を作成  # j:number of i
         hm = hm_a-hm_b
         zettaichi = np.abs(hm)
         hm_sum = zettaichi + hm_sum
-print("Check sum-1:",np.sum(nmap[:data_P]),np.sum(fmap[:784][:data_P]))
-print("CHeck sum-2:",np.sum(hm_sum))
-#sys.exit(-1)
+print("Check sum-1:normal-falut systems:",np.sum(nmap[:data_P]),np.sum(fmap[:784][:data_P]))
+print("CHeck sum-2:hm_sum              :",np.sum(hm_sum))
 
 #型変換等
 mylist=[0]
