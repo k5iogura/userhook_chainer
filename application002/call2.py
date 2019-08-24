@@ -1,4 +1,5 @@
 from distutils.dir_util import copy_tree
+from shutil import rmtree
 import os,sys,argparse
 
 #import subprocess
@@ -32,7 +33,7 @@ for k in faultNo_list:
 #    if(k!=0):
 #        replace_userfunc(k)
 
-    print("mylist=",d[k])   
+    print("mylist=",d[k],k)   
 #    for i in range(0,2):       # i:number of feeding image
         
 #        if(i!=0):
@@ -45,6 +46,7 @@ for k in faultNo_list:
     rename =  "list%d_no%d-%d"%(k, 0, data_P-1)
 #    rename2 = "cp -fr dnn_params "+ rename
 #    subprocess.run(rename2,shell =True)
+    rmtree(rename, ignore_errors=True)
     copy_tree("dnn_params", rename)
 #    subprocess.run("cp sample_origin.py sample.py",shell =True)
         
