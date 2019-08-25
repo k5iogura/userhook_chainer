@@ -3,6 +3,7 @@ from shutil import rmtree
 import os,sys,argparse
 import numpy as np
 import chainer.functions as F
+from sklearn.metrics import confusion_matrix, accuracy_score, precision_score
 
 import sample2
 tsx, tts = sample2.txs, sample2.tts
@@ -39,9 +40,9 @@ for k in faultNo_list:
     list_file = "lz3_Linear_out.npy"
     buffers.append( load_npz(list_dir, list_file) )
 faults = np.asarray(buffers)
-Nfaults, Nimages, Npred = faults.shape
+Nfaults, Nimages, Nclass = faults.shape
 normal = normal[:Nimages]
-print("* faults patterns = %d Images = %d Predictions = %d"%(Nfaults, Nimages, Npred))
+print("* faults patterns = %d Images = %d class = %d"%(Nfaults, Nimages, Nclass))
 
 # pred_normal := ( imageNo )
 # pred_faults := ( faultNo, imageNo )
@@ -52,14 +53,22 @@ pred_faults = np.argmax(F.softmax(faults,axis=2).data,axis=2)
 # diffs := ( imageNo )
 truth = tts[:Nimages]
 diffs = truth - pred_normal
-diffs[diffs!=0] = 1
-error = 1.0*np.sum(diffs)/np.prod(pred_normal.shape)
-print("normal system acc=",1.0-error)
 
-diffs = np.zeros(Nimages,dtype=np.int)
-for f in range(Nfaults):
-    diff = truth - pred_faults[f]
-    diffs[np.where(diff!=0)[0]] += 1
-error = 1.0*np.sum(diffs)/np.prod(pred_faults.shape)
-print("faults system acc=",1.0-error)
+# estimation of normal system
+conf_normal = confusion_matrix(truth, pred_normal, labels=[i for i in range(Nclass)])
+assert np.sum(conf_normal)==truth.shape[0]
+print("normal system confusion matrix")
+print(conf_normal)
+print("normal system accuracy = %.9f"%(accuracy_score(truth, pred_normal)))
+
+# estimation of fault system
+faultX = pred_faults.reshape(-1)
+truthX = np.asarray(list(truth)*pred_faults.shape[0])
+
+conf_fault = confusion_matrix(truthX, faultX, labels=[i for i in range(Nclass)])
+assert np.sum(conf_fault)==truthX.shape[0]
+print("fault system confusion matrix")
+print(conf_fault)
+print("fault system accuracy = %.9f"%(accuracy_score(truthX, faultX)))
+
 
