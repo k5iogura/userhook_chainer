@@ -46,15 +46,17 @@ def load_normal(gdir):
 def load_faults(faultNo_list, Nimage):
     fm  = np.zeros((max(faultNo_list)+1, Nimage, 50, 4 )) # fm.shape = (faultNo, imageNo, 50, 4 )
     for faultNo in faultNo_list:
-        fault_dir = "list%d_no0-%d"%(faultNo, Nimage-1)
+        fault_dir = "list%d"%(faultNo)
         assert os.path.exists(fault_dir), 'Image dir such as {} not found'.format(fault_dir)
         h = load_npz(fault_dir)
-        fm[faultNo] = h
+        assert Nimage <= h.shape[0],'Plese use python3 call2.py -i {}'.format(Nimage)
+        fm[faultNo] = h[:Nimage]
     return fm
 
 # load normal and fault systems
 nmap = load_normal(normal_dir)                  # nmap.shape = (imageNo, 50, 4)
 fmap = load_faults(faultNo_list, data_P)        # fmap.shape = (faultNo, imageNo, 50, 4)
+assert data_P <= nmap.shape[0],'Please use python3 sample2.py -i {}'.format(data_P)
 print('normal system image = %d and fault system image = %d'%(nmap.shape[0],fmap.shape[1]))
 assert nmap.shape[0] >= fmap.shape[1], 'Unsufficiant normal system results'
 

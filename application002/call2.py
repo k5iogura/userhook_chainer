@@ -41,7 +41,7 @@ for k in faultNo_list:
     sample2.infer(data_P)
     print('sample done')
 #        rename =  "list" + str(k)+"_no-"+str(i)
-    rename =  "list%d_no%d-%d"%(k, 0, data_P-1)
+    rename =  "list%d"%(k)
 #    rename2 = "cp -fr dnn_params "+ rename
 #    subprocess.run(rename2,shell =True)
     rmtree(rename, ignore_errors=True)
