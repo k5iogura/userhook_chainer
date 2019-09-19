@@ -10,6 +10,7 @@ from chainer import Variable
 
 args = argparse.ArgumentParser()
 args.add_argument('-i','--images',type=int,default=20)
+args.add_argument('-I','--Images',type=int,nargs='+')
 args.add_argument('-f','--faults',type=int,default=784, dest='faults')
 args.add_argument('-F','--Faults',type=int,nargs='+')
 args = args.parse_args()
@@ -17,7 +18,8 @@ args = args.parse_args()
 # spec to load
 #faultNo_list = range(args.faults)
 faultNo_list = args.Faults if args.Faults is not None else range(args.faults)
-data_P       = args.images
+data_P       = args.Images if args.Images is not None else range(args.images)
+#data_P       = args.images
 normal_dir   = 'original_data2'
 print("Run on Faults as",faultNo_list)
 
@@ -43,20 +45,19 @@ def load_normal(gdir):
     return load_npz(gdir)
 
 # loading faults system result
-def load_faults(faultNo_list, Nimage):
-    fm  = np.zeros((max(faultNo_list)+1, Nimage, 50, 4 )) # fm.shape = (faultNo, imageNo, 50, 4 )
+def load_faults(faultNo_list, image_list):
+    fm  = np.zeros((max(faultNo_list)+1, len(image_list), 50, 4 )) # fm.shape = (faultNo, imageNo, 50, 4 )
     for faultNo in faultNo_list:
         fault_dir = "list%d"%(faultNo)
         assert os.path.exists(fault_dir), 'Image dir such as {} not found'.format(fault_dir)
         h = load_npz(fault_dir)
-        assert Nimage <= h.shape[0],'Plese use python3 call2.py -i {}'.format(Nimage)
-        fm[faultNo] = h[:Nimage]
+        assert len(image_list) <= h.shape[0],'Too many image list {}<{}'.format(h.shape[0],image_list)
+        fm[faultNo] = h[image_list]
     return fm
 
 # load normal and fault systems
 nmap = load_normal(normal_dir)                  # nmap.shape = (imageNo, 50, 4)
 fmap = load_faults(faultNo_list, data_P)        # fmap.shape = (faultNo, imageNo, 50, 4)
-assert data_P <= nmap.shape[0],'Please use python3 sample2.py -i {}'.format(data_P)
 print('normal system image = %d and fault system image = %d'%(nmap.shape[0],fmap.shape[1]))
 assert nmap.shape[0] >= fmap.shape[1], 'Unsufficiant normal system results'
 
@@ -64,7 +65,7 @@ assert nmap.shape[0] >= fmap.shape[1], 'Unsufficiant normal system results'
 
 hm_sum= np.zeros((50,4),dtype=np.float64)
 
-for j in range(0,data_P): #オリジナルから行列を作成  # j:number of image
+for j in range(len(data_P)): #オリジナルから行列を作成  # j:number of image
     # Normal System
     hm_a = nmap[j]
 
@@ -75,7 +76,6 @@ for j in range(0,data_P): #オリジナルから行列を作成  # j:number of i
         hm = hm_a-hm_b
         zettaichi = np.abs(hm)
         hm_sum = zettaichi + hm_sum
-print("Check sum-1:normal-falut systems:",np.sum(nmap[:data_P]),np.sum(fmap[:784][:data_P]))
 print("CHeck sum-2:hm_sum              :",np.sum(hm_sum))
 
 #型変換等
