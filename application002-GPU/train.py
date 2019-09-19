@@ -1,7 +1,3 @@
-try:
-    import cupy
-    print("train:import cupy:OK")
-except:pass
 import numpy as np
 import chainer
 from chainer import Chain, Variable

@@ -1,8 +1,4 @@
-# For GPU
-try:
-    import cupy
-    print("sample3:import cupy:OK")
-except:pass
+import cupy # For GPU
 import chainer
 import numpy as np
 import chainer.computational_graph as c
@@ -18,10 +14,11 @@ from pdb import *
 from userfunc_var import VAR
 var=VAR()
 
-def load_ds():
-    _, test = chainer.datasets.get_mnist()
-    txs, tts = test._datasets
-    return txs, tts
+model=NeuralNet(50,10)
+serializers.load_npz('mnist.npz',model)
+
+_, test = chainer.datasets.get_mnist()
+txs, tts = test._datasets
 
 def infer(inp, model, txs, tts):
     print("*** infer ***")
@@ -44,27 +41,18 @@ def infer(inp, model, txs, tts):
 
 if __name__ == '__main__':
     args = argparse.ArgumentParser()
-    args.add_argument('-g','--gpu',type=int,default=-1)
     args.add_argument('-i','--images',type=int,default=20)
+    args.add_argument('-g','--gpu',type=int,default=0)
     args = args.parse_args()
-
-    model=NeuralNet(50,10)
-    serializers.load_npz('mnist.npz',model)
-
-    txs, tts = load_ds()
 
     # For GPU
     device = chainer.get_device(args.gpu)
-    if '@cupy' in str(device):
-        print('GPU device is ',device)
-        device.use()
-        model.to_device(device) # load model to GPU
-        txs = cupy.asarray(txs) # load data  to GPU
-    else:
-        print('Device is CPU',device)
+    assert '@cupy' in str(device),"Supports Only GPU"
+    print('GPU device is ',device)
+    device.use()
+    model.to_device(device) # load model to GPU
+    txs = cupy.asarray(txs) # load data  to GPU
 
-    var.n      = -1         # No fault injection for Normal System case
-    var.device = args.gpu   # set device to CPU(-1)/GPU(0)
-    infer(inp=args.images, model=model, txs=txs, tts=tts)
+    var.n = -1 # No fault injection for Normal System case
+    infer(args.images, model, txs, tts)
     copy_tree('dnn_params', 'original_data2')
-

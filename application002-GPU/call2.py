@@ -6,17 +6,15 @@ import os,sys,argparse
 #from replace_sample import replace_sample
 # from replace_userfunc import replace_userfunc
 
-import sample2 as sample
+import sample2
 from userfunc_var import VAR
 var = VAR()
 
 args = argparse.ArgumentParser()
 args.add_argument('-i','--images',type=int,default=20)
-args.add_argument('-g','--gpu',type=int,default=-1)
 args.add_argument('-f','--faults',type=int,default=784, dest='faults')
 args.add_argument('-F','--Faults',type=int,nargs='+')
 args = args.parse_args()
-sample.set_device(args.gpu)
 
 faultNo_list = args.Faults if args.Faults is not None else range(args.faults)
 data_P       = args.images
@@ -40,7 +38,7 @@ for k in faultNo_list:
 #            replace_sample(i)
 #    print("input picture no=" ,i)
 #        subprocess.run("python3 sample.py",shell =True)
-    sample.infer(data_P)
+    sample2.infer(data_P)
     print('sample done')
 #        rename =  "list" + str(k)+"_no-"+str(i)
     rename =  "list%d"%(k)
