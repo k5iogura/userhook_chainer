@@ -75,8 +75,8 @@ while True:
         if diff.all():  # for debugging
             print('detect fault', spec[1:])
             var.faultpat[k][detect_flag_idx]=True
-            detect_pat_no = np.where(diff)[0][0]
-            fault_injection_table.append([spec,test_patterns[detect_pat_no]])
+            detPtNo = np.where(diff)[0][0]
+            fault_injection_table.append([spec,test_patterns[detPtNo],BeforeSMax[detPtNo]])
             detects += 1
 
         break   # for debugging
