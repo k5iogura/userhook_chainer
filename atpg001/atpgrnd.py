@@ -1,12 +1,12 @@
-import numpy as np
-from distutils.dir_util import copy_tree
-from shutil import rmtree
-import os,sys,argparse
 from pdb import set_trace
+import os,sys,argparse
+assert sys.version_info.major >= 3, 'Use over python3 version but now in {}'.format(sys.version_info)
+
+import numpy as np
 
 import forward
-from userfunc_var import VAR
-from random import seed, random, randrange
+from   userfunc_var import VAR
+from   random import seed, random, randrange
 
 var = VAR()
 
@@ -45,19 +45,40 @@ def faultDiff(A,B):
     diff = [ I==J for I,J in zip(A.reshape(-1),B.reshape(-1)) ]
     return np.asarray(diff).reshape(A.shape)
 
-test_patterns = GenRndPatFloat32(11)
-var.n = -1
+# Generating float32 patterns at random
+# Inference result of Before or After of SoftMax
+# Notice!:
+#   B(b)eforeSMax type is chainer.variable.Variable
+#   A(a)fterSMax  type is numpy.ndarray
+test_patterns = GenRndPatFloat32(1024)
+var.n = -1  # For normal system inference
 BeforeSMax, AfterSMax = forward.infer(test_patterns)
 
-for k, spec in enumerate(var.faultpat):
+fault_injection_table = []
+while True:
+    detects = 0
+    for k, spec in enumerate(var.faultpat):
 
-    # spec: [0]detect_flag [1]layer [2]node [3]bit [4]sa01
-    if spec[0]: continue
+        # spec: [0]detect_flag [1]layer [2]node [3]bit [4]sa01
+        (detect_flag_idx, layer_idx, node_idx, bit_idx, sa01_idx) = (0, 1, 2, 3, 4)
+        if spec[0]: continue
 
-    var.n = k
-    var.n = -1
+        var.n = k
+        var.n = -1
 
-    print("{:8d} faultpattern={}".format(k, spec))
-    beforeSMax, afterSMax = forward.infer(test_patterns)
-    diff = faultDiff(BeforeSMax.data, beforeSMax.data)
-    break
+        print("{:8d} faultpattern={}".format(k, spec))
+        beforeSMax, afterSMax = forward.infer(test_patterns)
+        diffA = faultDiff(AfterSMax,  afterSMax)
+        diffB = faultDiff(BeforeSMax.data, beforeSMax.data)
+        diff  = diffB
+        # if not diff.all():
+        if diff.all():  # for debugging
+            print('detect fault', spec[1:])
+            var.faultpat[k][detect_flag_idx]=True
+            detect_pat_no = np.where(diff)[0][0]
+            fault_injection_table.append([spec,test_patterns[detect_pat_no]])
+            detects += 1
+
+        break   # for debugging
+    break   # for debugging
+
