@@ -7,6 +7,15 @@ from block_error import func
 from userfunc_var import VAR
 var = VAR()
 
+import ctypes
+class __f2i_union(ctypes.Union):
+    _fields_=[('float',ctypes.c_float),('uint',ctypes.c_uint)]
+
+def bitChange(v,bit):
+    f2i_union = __f2i_union(v)
+    f2i_union.uint = np.uint32(f2i_union.uint) | (0x1<<bit)
+    return f2i_union.float, f2i_union.uint
+
 def lx1_Linear(_in,_out):
     if var.n<0: return  # No fault injection for Normal System case
     num = 1
