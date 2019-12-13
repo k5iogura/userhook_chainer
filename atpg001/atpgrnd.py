@@ -64,7 +64,7 @@ while True:
         if spec[0]: continue
 
         var.n = k
-        var.n = -1
+#        var.n = -1 # for debugging
 
         print("{:8d} faultpattern={}".format(k, spec))
         beforeSMax, afterSMax = forward.infer(test_patterns)
