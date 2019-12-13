@@ -1,16 +1,16 @@
 import numpy as np
 from pdb import set_trace
 
-def GenFP(net_spec = ( 28*28, 50, 50, 10 ),bits = 32):
+def GenFP(net_spec = ( 28*28, 50, 50, 10 ),bits = 32, sa01 = (1,0)):
     layers   = len(net_spec)
-    sa01 = (1,0)
 
     faultpat = []
     for layer,nodes in enumerate(net_spec):
         for node in range(nodes):
             for bit in range(bits):
                 for sa in sa01:
-                    faultpat.append([layer, node, bit, sa])
+                    # faultpat: [0]detect_flag [1]layer [2]node [3]bit [4]sa01
+                    faultpat.append([False, layer, node, bit, sa])
     return faultpat
 
 class VAR:
