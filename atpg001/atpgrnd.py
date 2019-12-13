@@ -4,7 +4,7 @@ from shutil import rmtree
 import os,sys,argparse
 from pdb import set_trace
 
-import sample2
+import forward
 from userfunc_var import VAR
 from random import seed, random, randrange
 
@@ -39,20 +39,25 @@ faultNo_list = args.Faults if args.Faults is not None else range(args.faults)
 data_P       = args.images
 print("Run on Faults as",faultNo_list)
 
-#from mylist_block import mylist
+# fault diff function
+# Notice: Can not use xor operator for float32 type
+def faultDiff(A,B):
+    diff = [ I==J for I,J in zip(A.reshape(-1),B.reshape(-1)) ]
+    return np.asarray(diff).reshape(A.shape)
 
-#d=mylist()
+test_patterns = GenRndPatFloat32(11)
+var.n = -1
+BeforeSMax, AfterSMax = forward.infer(test_patterns)
+
 for k, spec in enumerate(var.faultpat):
 
     # spec: [0]detect_flag [1]layer [2]node [3]bit [4]sa01
     if spec[0]: continue
 
     var.n = k
+    var.n = -1
 
     print("{:8d} faultpattern={}".format(k, spec))
+    beforeSMax, afterSMax = forward.infer(test_patterns)
+    diff = faultDiff(BeforeSMax.data, beforeSMax.data)
     break
-    sample2.infer(data_P)
-#    print('sample done')
-#    rename =  "list%d"%(k)
-#    rmtree(rename, ignore_errors=True)
-#    copy_tree("dnn_params", rename)
