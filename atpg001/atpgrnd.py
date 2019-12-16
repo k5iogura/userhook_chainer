@@ -66,20 +66,23 @@ while True:
         (detect_flag_idx, layer_idx, node_idx, bit_idx, sa01_idx) = (0, 1, 2, 3, 4)
         if spec[0]: continue
 
-#        var.n = k
-
+        # For fault system inference
         beforeSMax, afterSMax = forward.infer(Test_Patterns)
+
+        # Calculate fault differencial function
         diffA = faultDiff(AfterSMax,  afterSMax)
         diffB = faultDiff(BeforeSMax.data, beforeSMax.data)
-        diff  = ~diffB
-        #if diff.all():      # not detected
+        diff  = ~diffB  # True : propagated fault / False : disappearance fault
+                        # diff.shape : ( batch, output_nodes )
+
+        # Choice test pattern to detect fault point
         if diff.any():  # detected
             var.faultpat[var.n][detect_flag_idx]=True
             detPtNo = np.where(diff)[0][0]
             fault_injection_table.append( [ spec, Test_Patterns[detPtNo], BeforeSMax[detPtNo] ] )
             detects += 1
             print('* detect fault faultNo={:4d} detPtNo={:4d} spec={}'.format(var.n, detPtNo, spec[1:]))
-        elif 0: # discard patterns
+        elif 0: # inserted fault disappeared, discard patterns
             print('* Matched fault insertion run and normal system run, Discard')
 
         if detects>=100: break   # for debugging
