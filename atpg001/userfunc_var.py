@@ -33,6 +33,6 @@ class VAR:
     batch    = 1024
     net_spec = (28*28,50,50,10)
     bit_spec = 32
-    sa01     = (1,0)
+    sa01     = (0,1)
     faultN   = np.sum(net_spec) * bit_spec * len(sa01)
-    faultpat = GenFP(net_spec, bit_spec)
+    faultpat = GenFP(net_spec, bit_spec, sa01)
