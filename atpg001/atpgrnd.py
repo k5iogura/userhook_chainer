@@ -51,12 +51,13 @@ def faultDiff(A,B):
 #   B(b)eforeSMax type is chainer.variable.Variable
 #   A(a)fterSMax  type is numpy.ndarray
 var.batch = 1024
-print('Generating Test Pattern with batch ',var.batch)
-test_patterns = GenRndPatFloat32(var.batch)
-print('Generating Expected value of normal system')
+print('* Generating Test Pattern with batch ',var.batch)
+Test_Patterns = GenRndPatFloat32(var.batch)
+print('* Generating Expected value of normal system')
 var.n = -1  # For normal system inference
-BeforeSMax, AfterSMax = forward.infer(test_patterns)
+BeforeSMax, AfterSMax = forward.infer(Test_Patterns)
 
+print('* Fault Point insertion and varify')
 fault_injection_table = []
 while True:
     detects = 0
@@ -70,17 +71,19 @@ while True:
 #        var.n = -1 # for debugging
 
         print("{:8d} faultpattern={}".format(k, spec))
-        beforeSMax, afterSMax = forward.infer(test_patterns)
+        beforeSMax, afterSMax = forward.infer(Test_Patterns)
         diffA = faultDiff(AfterSMax,  afterSMax)
         diffB = faultDiff(BeforeSMax.data, beforeSMax.data)
         diff  = diffB
-        # if not diff.all():
-        if diff.all():  # for debugging
-            print('detect fault', spec[1:])
+        #if diff.all():      # not detected
+        if not diff.all():  # detected
+            print('* detect fault', spec[1:])
             var.faultpat[k][detect_flag_idx]=True
             detPtNo = np.where(diff)[0][0]
-            fault_injection_table.append([spec,test_patterns[detPtNo],BeforeSMax[detPtNo]])
+            fault_injection_table.append( [ spec, Test_Patterns[detPtNo], BeforeSMax[detPtNo] ] )
             detects += 1
+        else: # discard patterns
+            print('* Matched fault insertion run and normal system run, Discard')
 
         break   # for debugging
     break   # for debugging

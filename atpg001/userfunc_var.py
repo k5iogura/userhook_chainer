@@ -5,10 +5,10 @@ def GenFP(net_spec = ( 28*28, 50, 50, 10 ),bits = 32, sa01 = (1,0)):
     layers   = len(net_spec)
 
     faultpat = []
-    print('Falut Point Summary')
-    print('layer nodes bits sa01')
+    print('* Falut Point Summaries')
+    print('  layer nodes bits sa01')
     for layer,nodes in enumerate(net_spec):
-        print('{:5d}{:6d}{:5d}   {}'.format(layer,nodes,bits,sa01))
+        print('  {:5d}{:6d}{:5d}   {}'.format(layer,nodes,bits,sa01))
         for node in range(nodes):
             for bit in range(bits):
                 for sa in sa01:

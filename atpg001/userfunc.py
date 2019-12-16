@@ -17,9 +17,11 @@ def bitChange(v,bit):
     return f2i_union.float, f2i_union.uint
 
 def lx1_Linear(_in,_out):
-    if var.n<0: # No fault injection for Normal System case
+    # _in.args[0].shape : batch, in_size, in_size, out_size
+    # _out.shape        : batch, go_size
+    if var.n<0: # No fault injection for Normal System case check only
         assert _in.args[0].dtype == np.float32, 'Unsupport input type {}'.format(_out.dtype)
-        assert _out.dtype == np.float32,        'Unsupport out   type {}'.format(_out.dtype)
+        assert _out.dtype        == np.float32, 'Unsupport out   type {}'.format(_out.dtype)
         return
     num = 1
     print("fault spec:", var.n, var.faultpat[var.n] )
@@ -37,10 +39,14 @@ def lx1_Linear(_in,_out):
 #    set_trace()
 
 def ly2_Linear(_in,_out):
-    pass
-
+    if var.n<0: # No fault injection for Normal System case
+        assert _in.args[0].dtype == np.float32, 'Unsupport input type {}'.format(_out.dtype)
+        assert _out.dtype        == np.float32, 'Unsupport out   type {}'.format(_out.dtype)
+        return
 
 def lz3_Linear(_in,_out):
     if var.n<0: # No fault injection for Normal System case
+        assert _in.args[0].dtype == np.float32, 'Unsupport input type {}'.format(_out.dtype)
+        assert _out.dtype        == np.float32, 'Unsupport out   type {}'.format(_out.dtype)
         return
 
