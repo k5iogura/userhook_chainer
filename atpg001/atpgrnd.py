@@ -85,6 +85,6 @@ while True:
         elif 0: # inserted fault disappeared, discard patterns
             print('* Matched fault insertion run and normal system run, Discard')
 
-        if detects>=100: break   # for debugging
+        if detects>=1000: break   # for debugging
     break   # for debugging
 
