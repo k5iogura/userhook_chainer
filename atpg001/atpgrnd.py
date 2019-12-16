@@ -37,13 +37,10 @@ def GenRndPatInt32(batch, img_hw=28, img_ch=1):
         randpat.append([randrange(minint32, maxint32) for i in range(pow(img_hw,2)*img_ch)])
     return np.asarray(randpat, dtype=np.int32).reshape(-1,img_hw,img_hw,img_ch)
 
-#faultNo_list = args.Faults if args.Faults is not None else range(args.faults)
-#data_P       = args.images
-#print("Run on Faults as",faultNo_list)
-
 # fault diff function
 # Notice: Can not use xor operator for float32 type
 def faultDiff(A,B):
+    assert len(A.reshape(-1))==len(B.reshape(-1)),'Mismatch length btn A and B'
     diff = [ I==J for I,J in zip(A.reshape(-1),B.reshape(-1)) ]
     return np.asarray(diff).reshape(A.shape)
 
@@ -63,30 +60,28 @@ print('* Fault Point insertion and varify')
 fault_injection_table = []
 while True:
     detects = 0
-    for k, spec in enumerate(var.faultpat):
+    for var.n, spec in enumerate(var.faultpat):
 
         # spec: [0]detect_flag [1]layer [2]node [3]bit [4]sa01
         (detect_flag_idx, layer_idx, node_idx, bit_idx, sa01_idx) = (0, 1, 2, 3, 4)
         if spec[0]: continue
 
-        var.n = k
-#        var.n = -1 # for debugging
+#        var.n = k
 
-        #print("{:8d} faultpattern={}".format(k, spec))
         beforeSMax, afterSMax = forward.infer(Test_Patterns)
         diffA = faultDiff(AfterSMax,  afterSMax)
         diffB = faultDiff(BeforeSMax.data, beforeSMax.data)
-        diff  = diffB
+        diff  = ~diffB
         #if diff.all():      # not detected
-        if not diff.all():  # detected
-            print('* detect fault', spec[1:])
-            var.faultpat[k][detect_flag_idx]=True
+        if diff.any():  # detected
+            var.faultpat[var.n][detect_flag_idx]=True
             detPtNo = np.where(diff)[0][0]
             fault_injection_table.append( [ spec, Test_Patterns[detPtNo], BeforeSMax[detPtNo] ] )
             detects += 1
-        else: # discard patterns
+            print('* detect fault faultNo={:4d} detPtNo={:4d} spec={}'.format(var.n, detPtNo, spec[1:]))
+        elif 0: # discard patterns
             print('* Matched fault insertion run and normal system run, Discard')
 
-        if detects>=10: break   # for debugging
+        if detects>=100: break   # for debugging
     break   # for debugging
 

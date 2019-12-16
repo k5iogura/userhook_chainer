@@ -14,7 +14,11 @@ class __f2i_union(ctypes.Union):
 
 def bitChange(v,bit,sa01):
     f2i_union = __f2i_union(v)
-    f2i_union.uint = np.uint32(f2i_union.uint) | (sa01<<bit)
+    t01 = 0 if ( f2i_union.uint & (0x01<<bit) )==0 else 1
+    if sa01 == 1:
+        f2i_union.uint = f2i_union.uint | (0x01<<bit)
+    else:
+        f2i_union.uint = f2i_union.uint & ~(0x01<<bit)
     return f2i_union.float, f2i_union.uint
 
 # layer-0 hook
@@ -31,20 +35,20 @@ def lx1_Linear(_in,_out):
 
     detect_flag, layer, node, bit, sa01 = var.faultpat[var.n]
     if layer != 0: return # I'm not in this layer fault injection
-    print("fault spec:", var.n, var.faultpat[var.n] )
 
-    # Insert fault into _in with sa01
+    # Update _in with sa01
     g = _in.args[0].copy()
     for i in range(batch):
-        normal = g[i][node//28][node%28][0]
+        normal = g[ i ][ node//in_size ][ node%in_size ][0]
         v_float, v_uint = bitChange(normal, bit, sa01)
-        g[i][node//28][node%28][0] = np.float32(v_float)
+        g[ i ][ node//in_size ][ node%in_size ][0] = np.float32(v_float)
         #set_trace()
-    print("{:8d} faultpattern={}".format(var.n, var.faultpat[var.n]))
-    print(' '*8, np.max(_in.args[0]), '=>', np.max(g), np.min(_in.args[0]), '=>', np.min(g))
+    if 0:
+        print("{:8d} faultpattern={}".format(var.n, var.faultpat[var.n]))
+        print(' '*8, np.max(_in.args[0]), '=>', np.max(g), np.min(_in.args[0]), '=>', np.min(g))
     _in.args[0].data = g
 
-    # Calcurate Linear Layer with faultu insertion
+    # Calculate Linear Layer after fault insertion
     this_linear_out = linear(_in.args[0], _in.link.__dict__['W'], _in.link.__dict__['b'])
     this_linear_out = this_linear_out.reshape(_out.data.shape)
     _out.data = this_linear_out.data
