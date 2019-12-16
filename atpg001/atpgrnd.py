@@ -24,7 +24,8 @@ def GenRndPatFloat32(batch, img_hw=28, img_ch=1):
     minf32 = np.finfo(np.float32).min
     randpat = []
     for b in range(batch):
-        randpat.append([np.clip(random(),minf32,maxf32) for i in range(pow(img_hw,2)*img_ch)])
+        rdata = random() * 255.
+        randpat.append([np.clip(rdata,minf32,maxf32) for i in range(pow(img_hw,2)*img_ch)])
     return np.asarray(randpat, dtype=np.float32).reshape(-1, img_hw, img_hw, img_ch)
 
 def GenRndPatInt32(batch, img_hw=28, img_ch=1):
@@ -82,9 +83,10 @@ while True:
             detPtNo = np.where(diff)[0][0]
             fault_injection_table.append( [ spec, Test_Patterns[detPtNo], BeforeSMax[detPtNo] ] )
             detects += 1
+            break
         else: # discard patterns
             print('* Matched fault insertion run and normal system run, Discard')
 
-        break   # for debugging
+        if k==7000: break   # for debugging
     break   # for debugging
 
