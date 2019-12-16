@@ -48,7 +48,7 @@ def faultDiff(A,B):
     return np.asarray(diff).reshape(A.shape)
 
 # Generating float32 patterns at random
-# Inference result of Before or After of SoftMax
+# Calculate inference result of Before or After of SoftMax
 # Notice!:
 #   B(b)eforeSMax type is chainer.variable.Variable
 #   A(a)fterSMax  type is numpy.ndarray
@@ -84,10 +84,9 @@ while True:
             detPtNo = np.where(diff)[0][0]
             fault_injection_table.append( [ spec, Test_Patterns[detPtNo], BeforeSMax[detPtNo] ] )
             detects += 1
-            break
         else: # discard patterns
             print('* Matched fault insertion run and normal system run, Discard')
 
-        if k==7000: break   # for debugging
+        if detects>=10: break   # for debugging
     break   # for debugging
 
