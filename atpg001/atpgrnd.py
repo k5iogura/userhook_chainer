@@ -24,7 +24,8 @@ def GenRndPatFloat32(batch, img_hw=28, img_ch=1):
     minf32 = np.finfo(np.float32).min
     randpat = []
     for b in range(batch):
-        rdata = random() * 255.
+        #rdata = random() * 255.
+        rdata = random() * 1.
         randpat.append([np.clip(rdata,minf32,maxf32) for i in range(pow(img_hw,2)*img_ch)])
     return np.asarray(randpat, dtype=np.float32).reshape(-1, img_hw, img_hw, img_ch)
 
@@ -71,7 +72,7 @@ while True:
         var.n = k
 #        var.n = -1 # for debugging
 
-        print("{:8d} faultpattern={}".format(k, spec))
+        #print("{:8d} faultpattern={}".format(k, spec))
         beforeSMax, afterSMax = forward.infer(Test_Patterns)
         diffA = faultDiff(AfterSMax,  afterSMax)
         diffB = faultDiff(BeforeSMax.data, beforeSMax.data)
