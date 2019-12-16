@@ -21,9 +21,19 @@ args.add_argument('-s','--sa',       type=int,default=None)
 args.add_argument('-S','--saList',   type=int,nargs='+')
 args = args.parse_args()
 
+# Generate fault list
+seed(2222222222)
+net_spec=(28*28, 50, 50, 10)
+if args.layerNo is not None:
+    if   args.layerNo == 0: net_spec=(28*28, 0, 0, 0)
+    elif args.layerNo == 1: net_spec=(0, 50, 0, 0)
+    elif args.layerNo == 2: net_spec=(0, 0, 50, 0)
+    elif args.layerNo == 3: net_spec=(0, 0, 0, 10)
+#var.init(Batch=1024, Net_spec=net_spec)
+var.init(Batch=1024, Net_spec=(1,1,1,1))
+
 # random number generators for int32 and float32
 # python random function generates 53bit float random number by Mersenne twister
-seed(2222222222)
 def GenRndPatFloat32(batch, img_hw=28, img_ch=1):
     maxf32 = np.finfo(np.float32).max
     minf32 = np.finfo(np.float32).min
@@ -54,8 +64,6 @@ def faultDiff(A,B):
 # Notice!:
 #   B(b)eforeSMax type is chainer.variable.Variable
 #   A(a)fterSMax  type is numpy.ndarray
-#var.init(Batch=1024, Net_spec=(0,50,0,0))
-var.init(Batch=1024, Net_spec=(0,0,0,50))
 print('* Generating Test Pattern with batch ',var.batch)
 Test_Patterns = GenRndPatFloat32(var.batch)
 print('* Generating Expected value of normal system')
@@ -97,11 +105,11 @@ while True:
         all_detects += detects
         Test_Patterns = GenRndPatFloat32(var.batch)
         print('* Created New Test pattern')
-        print('* Detected fault points {}/{}/{}', detects, all_detects, var.faultN)
+        print('* Detected fault points {}/{}/{}'.format(detects, all_detects, var.faultN))
     else:
         break
 
 #    break   # for debugging
-print('* Summary for Detected fault points {}/{}', all_detects, var.faultN)
+print('* Summary for Detected fault points {}/{}'.format(all_detects, var.faultN))
 print('* End of Flow')
 
