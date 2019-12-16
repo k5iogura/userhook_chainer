@@ -5,15 +5,20 @@ assert sys.version_info.major >= 3, 'Use over python3 version but now in {}'.for
 import numpy as np
 
 import forward
-from   userfunc_var import VAR
+from   userfunc_var import *
 from   random import seed, random, randrange
 
 var = VAR()
 
 args = argparse.ArgumentParser()
-args.add_argument('-i','--images',type=int,default=20)
-args.add_argument('-f','--faults',type=int,default=784, dest='faults')
-args.add_argument('-F','--Faults',type=int,nargs='+')
+args.add_argument('-l','--layerNo',  type=int,default=None)
+args.add_argument('-L','--layerList',type=int,nargs='+')
+args.add_argument('-n','--nodeNo',   type=int,default=None)
+args.add_argument('-N','--nodeList', type=int,nargs='+')
+args.add_argument('-b','--bitNo',    type=int,default=None)
+args.add_argument('-B','--bitList',  type=int,nargs='+')
+args.add_argument('-s','--sa',       type=int,default=None)
+args.add_argument('-S','--saList',   type=int,nargs='+')
 args = args.parse_args()
 
 # random number generators for int32 and float32
@@ -49,7 +54,8 @@ def faultDiff(A,B):
 # Notice!:
 #   B(b)eforeSMax type is chainer.variable.Variable
 #   A(a)fterSMax  type is numpy.ndarray
-var.batch = 1024
+#var.init(Batch=1024, Net_spec=(0,50,0,0))
+var.init(Batch=1024, Net_spec=(0,0,0,50))
 print('* Generating Test Pattern with batch ',var.batch)
 Test_Patterns = GenRndPatFloat32(var.batch)
 print('* Generating Expected value of normal system')

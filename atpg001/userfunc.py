@@ -21,7 +21,7 @@ def bitChange(v,bit,sa01):
         f2i_union.uint = f2i_union.uint & ~(0x01<<bit)
     return f2i_union.float, f2i_union.uint
 
-# layer-0 hook
+# layer-0/1 hook
 # Insert a fault in both _in and _out
 def lx1_Linear(_in,_out):
     # _in.args[0].shape : batch, in_size, in_size, channels
@@ -62,10 +62,10 @@ def lx1_Linear(_in,_out):
         if 0:
             print("{:8d} faultpattern={}".format(var.n, var.faultpat[var.n]))
             print(' '*8, np.max(_out.data), '=>', np.max(g), np.min(_out.data), '=>', np.min(g))
-        _in.data = g
+        _out.data = g
 
 
-# layer-1 hook
+# layer-2 hook
 def ly2_Linear(_in,_out):
     if var.n<0: # No fault injection for Normal System case
         assert _in.args[0].dtype == np.float32, 'Unsupport input type {}'.format(_out.dtype)
@@ -82,10 +82,10 @@ def ly2_Linear(_in,_out):
         if 0:
             print("{:8d} faultpattern={}".format(var.n, var.faultpat[var.n]))
             print(' '*8, np.max(_out.data), '=>', np.max(g), np.min(_out.data), '=>', np.min(g))
-        _in.data = g
+        _out.data = g
 
 
-# layer-2 hook
+# layer-3 hook
 def lz3_Linear(_in,_out):
     if var.n<0: # No fault injection for Normal System case
         assert _in.args[0].dtype == np.float32, 'Unsupport input type {}'.format(_out.dtype)
@@ -102,6 +102,6 @@ def lz3_Linear(_in,_out):
         if 0:
             print("{:8d} faultpattern={}".format(var.n, var.faultpat[var.n]))
             print(' '*8, np.max(_out.data), '=>', np.max(g), np.min(_out.data), '=>', np.min(g))
-        _in.data = g
+        _out.data = g
 
 

@@ -30,9 +30,14 @@ class VAR:
     @os.setter
     def os(self,val):VAR.__os=val
 
-    batch    = 1024
-    net_spec = (28*28,50,50,10)
-    bit_spec = 32
-    sa01     = (0,1)
-    faultN   = np.sum(net_spec) * bit_spec * len(sa01)
-    faultpat = GenFP(net_spec, bit_spec, sa01)
+    def init(self, Batch=1024, Net_spec=(28*28,50,50,10), Bit_spec=32, Sa01=(0,1)):
+        VAR.batch    = Batch
+        VAR.net_spec = Net_spec
+        VAR.bit_spec = Bit_spec
+        VAR.sa01     = Sa01
+        #VAR.batch    = 1024
+        #VAR.net_spec = (28*28,50,50,10)
+        #VAR.bit_spec = 32
+        #VAR.sa01     = (0,1)
+        VAR.faultN   = np.sum(VAR.net_spec) * VAR.bit_spec * len(VAR.sa01)
+        VAR.faultpat = GenFP(VAR.net_spec, VAR.bit_spec, VAR.sa01)
