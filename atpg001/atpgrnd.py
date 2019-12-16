@@ -58,6 +58,7 @@ BeforeSMax, AfterSMax = forward.infer(Test_Patterns)
 
 print('* Fault Point insertion and varify')
 fault_injection_table = []
+all_detects = 0
 while True:
     detects = 0
     for var.n, spec in enumerate(var.faultpat):
@@ -81,10 +82,20 @@ while True:
             detPtNo = np.where(diff)[0][0]
             fault_injection_table.append( [ spec, Test_Patterns[detPtNo], BeforeSMax[detPtNo] ] )
             detects += 1
-            print('* detect fault faultNo={:4d} detPtNo={:4d} spec={}'.format(var.n, detPtNo, spec[1:]))
+            print('* detect fault faultNo={:6d} detPtNo={:6d} detects={:6d} spec={}'.format(
+                var.n, detPtNo, detects, spec[1:]))
         elif 0: # inserted fault disappeared, discard patterns
             print('* Matched fault insertion run and normal system run, Discard')
 
-        if detects>=1000: break   # for debugging
-    break   # for debugging
+    if detects>0: # Create new random patterns
+        all_detects += detects
+        Test_Patterns = GenRndPatFloat32(var.batch)
+        print('* Created New Test pattern')
+        print('* Detected fault points {}/{}/{}', detects, all_detects, var.faultN)
+    else:
+        break
+
+#    break   # for debugging
+print('* Summary for Detected fault points {}/{}', all_detects, var.faultN)
+print('* End of Flow')
 
