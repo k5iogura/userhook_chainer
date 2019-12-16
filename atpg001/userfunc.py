@@ -4,7 +4,7 @@ from pdb import *
 from chainer.functions.connection.linear import linear
 from block_error import func
 
-from userfunc_var import VAR
+from userfunc_var import VAR, GenFP
 var = VAR()
 
 import ctypes
@@ -17,7 +17,10 @@ def bitChange(v,bit):
     return f2i_union.float, f2i_union.uint
 
 def lx1_Linear(_in,_out):
-    if var.n<0: return  # No fault injection for Normal System case
+    if var.n<0: # No fault injection for Normal System case
+        assert _in.args[0].dtype == np.float32, 'Unsupport input type {}'.format(_out.dtype)
+        assert _out.dtype == np.float32,        'Unsupport out   type {}'.format(_out.dtype)
+        return
     num = 1
     print("fault spec:", var.n, var.faultpat[var.n] )
     detect_flag, layer, node, bit, sa = var.faultpat[var.n]
@@ -34,10 +37,10 @@ def lx1_Linear(_in,_out):
 #    set_trace()
 
 def ly2_Linear(_in,_out):
-    set_trace()
     pass
 
 
 def lz3_Linear(_in,_out):
-    set_trace()
-    pass
+    if var.n<0: # No fault injection for Normal System case
+        return
+

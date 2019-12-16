@@ -35,9 +35,9 @@ def GenRndPatInt32(batch, img_hw=28, img_ch=1):
         randpat.append([randrange(minint32, maxint32) for i in range(pow(img_hw,2)*img_ch)])
     return np.asarray(randpat, dtype=np.int32).reshape(-1,img_hw,img_hw,img_ch)
 
-faultNo_list = args.Faults if args.Faults is not None else range(args.faults)
-data_P       = args.images
-print("Run on Faults as",faultNo_list)
+#faultNo_list = args.Faults if args.Faults is not None else range(args.faults)
+#data_P       = args.images
+#print("Run on Faults as",faultNo_list)
 
 # fault diff function
 # Notice: Can not use xor operator for float32 type
@@ -50,7 +50,10 @@ def faultDiff(A,B):
 # Notice!:
 #   B(b)eforeSMax type is chainer.variable.Variable
 #   A(a)fterSMax  type is numpy.ndarray
-test_patterns = GenRndPatFloat32(1024)
+var.batch = 1024
+print('Generating Test Pattern with batch ',var.batch)
+test_patterns = GenRndPatFloat32(var.batch)
+print('Generating Expected value of normal system')
 var.n = -1  # For normal system inference
 BeforeSMax, AfterSMax = forward.infer(test_patterns)
 

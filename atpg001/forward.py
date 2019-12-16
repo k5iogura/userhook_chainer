@@ -20,7 +20,7 @@ serializers.load_npz('mnist.npz',model)
 #txs, tts = test._datasets
 
 def infer(txs):
-    print("*** infer ***")
+#    print("*** infer ***")
 #    a = txs[:inp]
 #    print(":inp=:",inp)
 #    print("gt:input number  =" ,tts[:inp])
