@@ -6,6 +6,7 @@ import numpy as np
 
 import forward
 from   userfunc_var import *
+from   userfunc import __f2i_union
 from   random import seed, random, randrange
 
 var = VAR()
@@ -29,8 +30,8 @@ if args.layerNo is not None:
     elif args.layerNo == 1: net_spec=(0, 50, 0, 0)
     elif args.layerNo == 2: net_spec=(0, 0, 50, 0)
     elif args.layerNo == 3: net_spec=(0, 0, 0, 10)
-#var.init(Batch=1024, Net_spec=net_spec)
-var.init(Batch=1024, Net_spec=(1,1,1,1))
+var.init(Batch=1024, Net_spec=net_spec)
+#var.init(Batch=1024, Net_spec=(5,5,2,2))
 
 # random number generators for int32 and float32
 # python random function generates 53bit float random number by Mersenne twister
@@ -56,7 +57,7 @@ def GenRndPatInt32(batch, img_hw=28, img_ch=1):
 # Notice: Can not use xor operator for float32 type
 def faultDiff(A,B):
     assert len(A.reshape(-1))==len(B.reshape(-1)),'Mismatch length btn A and B'
-    diff = [ I==J for I,J in zip(A.reshape(-1),B.reshape(-1)) ]
+    diff = [ __f2i_union(I).uint==__f2i_union(J).uint for I,J in zip(A.reshape(-1),B.reshape(-1)) ]
     return np.asarray(diff).reshape(A.shape)
 
 # Generating float32 patterns at random
@@ -94,7 +95,7 @@ while True:
         if diff.any():  # detected
             var.faultpat[var.n][detect_flag_idx]=True
             detPtNo = np.where(diff)[0][0]
-            fault_injection_table.append( [ spec, Test_Patterns[detPtNo], BeforeSMax[detPtNo] ] )
+#            fault_injection_table.append( [ spec, Test_Patterns[detPtNo], BeforeSMax[detPtNo] ] )
             detects += 1
             print('* detect fault faultNo={:6d} detPtNo={:6d} detects={:6d} spec={}'.format(
                 var.n, detPtNo, detects, spec[1:]))
