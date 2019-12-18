@@ -97,8 +97,8 @@ while True:
         if diff.any():  # case detected
             var.faultpat[var.n][detect_flag_idx]=True
             detPtNo = np.where(diff)[0][0]
-            if spec[bit_idx] == 31 and spec[sa01_idx]==0:
-                set_trace()
+#            if spec[bit_idx] == 31 and spec[sa01_idx]==0:
+#                set_trace()
 #            fault_injection_table.append( [ spec, Test_Patterns[detPtNo], BeforeSMax[detPtNo] ] )
             detects += 1
             print('* detect fault faultNo={:6d} detPtNo={:6d} detects={:6d} spec={}'.format(
