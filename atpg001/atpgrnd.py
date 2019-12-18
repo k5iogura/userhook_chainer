@@ -74,7 +74,9 @@ BeforeSMax, AfterSMax = forward.infer(Test_Patterns)
 print('* Fault Point insertion and varify')
 fault_injection_table = []
 all_detects = 0
+stageNo     = 0
 while True:
+    print('* Stage-{:6d} fault simulation started'.format(stageNo))
     detects = 0
     for var.n, spec in enumerate(var.faultpat):
 
@@ -92,21 +94,27 @@ while True:
                         # diff.shape : ( batch, output_nodes )
 
         # Choice test pattern to detect fault point
-        if diff.any():  # detected
+        if diff.any():  # case detected
             var.faultpat[var.n][detect_flag_idx]=True
             detPtNo = np.where(diff)[0][0]
+            if spec[bit_idx] == 31 and spec[sa01_idx]==0:
+                set_trace()
 #            fault_injection_table.append( [ spec, Test_Patterns[detPtNo], BeforeSMax[detPtNo] ] )
             detects += 1
             print('* detect fault faultNo={:6d} detPtNo={:6d} detects={:6d} spec={}'.format(
                 var.n, detPtNo, detects, spec[1:]))
-        elif 0: # inserted fault disappeared, discard patterns
+        elif 0: # case not detected, inserted faults disappeared, discard the patterns
             print('* Matched fault insertion run and normal system run, Discard')
 
     if detects>0: # Create new random patterns
+        print('* Created New Test pattern')
         all_detects += detects
         Test_Patterns = GenRndPatFloat32(var.batch)
-        print('* Created New Test pattern')
         print('* Detected fault points {}/{}/{}'.format(detects, all_detects, var.faultN))
+        print('* Generating Expected value of normal system')
+        var.n = -1  # For normal system inference
+        BeforeSMax, AfterSMax = forward.infer(Test_Patterns)
+        stageNo+=1
     else:
         break
 

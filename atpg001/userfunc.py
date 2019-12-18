@@ -12,6 +12,26 @@ import ctypes
 class __f2i_union(ctypes.Union):
     _fields_=[('float',ctypes.c_float),('uint',ctypes.c_uint)]
 
+def count1(x):
+    count = 0
+    bits = np.dtype(x.dtype).itemsize * 8
+    y    = __f2i_union(x)
+    for i in range(bits):
+        if (y.uint & (0x1<<i)) != 0:count+=1
+    return count
+
+def bitChange_back(v,bit,sa01):
+    f2i_union = __f2i_union(v)
+    t01 = 0 if ( f2i_union.uint & (0x01<<bit) )==0 else 1
+    if sa01 == 1:
+        faultValue = f2i_union.uint | (0x01<<bit)
+        if t01 == 0:f2i_union.uint = faultValue
+    else:
+        #f2i_union.uint = f2i_union.uint & ~(0x01<<bit)
+        # toggle bit-th bit in v
+        if t01 == 2: f2i_union.uint = f2i_union.uint ^ (1 << bit)
+    return f2i_union.float, f2i_union.uint
+
 def bitChange(v,bit,sa01):
     f2i_union = __f2i_union(v)
     t01 = 0 if ( f2i_union.uint & (0x01<<bit) )==0 else 1
@@ -55,7 +75,7 @@ def lx1_Linear(_in,_out):
 
     if layer == 1:
         g = _out.data.copy()
-        for i in range(go_size):
+        for i in range(batch):
             normal = g[ i ][ node//go_size ]
             v_float, v_uint = bitChange(normal, bit, sa01)
             g[ i ][ node//go_size ] = np.float32(v_float)
@@ -75,7 +95,7 @@ def ly2_Linear(_in,_out):
     detect_flag, layer, node, bit, sa01 = var.faultpat[var.n]
     if layer == 2:
         g = _out.data.copy()
-        for i in range(go_size):
+        for i in range(batch):
             normal = g[ i ][ node//go_size ]
             v_float, v_uint = bitChange(normal, bit, sa01)
             g[ i ][ node//go_size ] = np.float32(v_float)
@@ -95,7 +115,7 @@ def lz3_Linear(_in,_out):
     detect_flag, layer, node, bit, sa01 = var.faultpat[var.n]
     if layer == 3:
         g = _out.data.copy()
-        for i in range(go_size):
+        for i in range(batch):
             normal = g[ i ][ node//go_size ]
             v_float, v_uint = bitChange(normal, bit, sa01)
             g[ i ][ node//go_size ] = np.float32(v_float)
