@@ -20,6 +20,8 @@ args.add_argument('-b','--bitNo',    type=int,default=None)
 args.add_argument('-B','--bitList',  type=int,nargs='+')
 args.add_argument('-s','--sa',       type=int,default=None)
 args.add_argument('-S','--saList',   type=int,nargs='+')
+args.add_argument('-u','--ud_list', type=str, default='ud_list')
+args.add_argument('-d','--dt_list', type=str, default='dt_list')
 args = args.parse_args()
 
 # Generate fault list
@@ -39,10 +41,10 @@ def GenRndPatFloat32(batch, img_hw=28, img_ch=1):
     maxf32 = np.finfo(np.float32).max
     minf32 = np.finfo(np.float32).min
     randpat = []
+    RxX = lambda X: X*random()
+    X   = 1.0
     for b in range(batch):
-        #rdata = random() * 255.
-        rdata = random() * 1.
-        randpat.append([np.clip(rdata,minf32,maxf32) for i in range(pow(img_hw,2)*img_ch)])
+        randpat.append([np.clip(RxX(X),minf32,maxf32) for i in range(pow(img_hw,2)*img_ch)])
     return np.asarray(randpat, dtype=np.float32).reshape(-1, img_hw, img_hw, img_ch)
 
 def GenRndPatInt32(batch, img_hw=28, img_ch=1):
@@ -97,9 +99,7 @@ while True:
         if diff.any():  # case detected
             var.faultpat[var.n][detect_flag_idx]=True
             detPtNo = np.where(diff)[0][0]
-#            if spec[bit_idx] == 31 and spec[sa01_idx]==0:
-#                set_trace()
-#            fault_injection_table.append( [ spec, Test_Patterns[detPtNo], BeforeSMax[detPtNo] ] )
+            fault_injection_table.append( [ spec, Test_Patterns[detPtNo], BeforeSMax[detPtNo] ] )
             detects += 1
             print('* detect fault faultNo={:6d} detPtNo={:6d} detects={:6d} spec={}'.format(
                 var.n, detPtNo, detects, spec[1:]))
@@ -115,6 +115,11 @@ while True:
         var.n = -1  # For normal system inference
         BeforeSMax, AfterSMax = forward.infer(Test_Patterns)
         stageNo+=1
+        print('* Saving detected fault points, pattern and expected into',args.dt_list+'.npz')
+        np.savez(args.dt_list, fault_injection_table)
+        print('* Saving undetected fault points list into',args.ud_list+'.npz')
+        ud_table = np.asarray([i for i in var.faultpat if var.faultpat[0] is False])
+        np.savez(args.ud_list, ud_table)
     else:
         break
 

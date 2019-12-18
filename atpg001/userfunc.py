@@ -12,33 +12,23 @@ import ctypes
 class __f2i_union(ctypes.Union):
     _fields_=[('float',ctypes.c_float),('uint',ctypes.c_uint)]
 
-def count1(x):
-    count = 0
-    bits = np.dtype(x.dtype).itemsize * 8
-    y    = __f2i_union(x)
-    for i in range(bits):
-        if (y.uint & (0x1<<i)) != 0:count+=1
-    return count
-
-def bitChange_back(v,bit,sa01):
-    f2i_union = __f2i_union(v)
-    t01 = 0 if ( f2i_union.uint & (0x01<<bit) )==0 else 1
-    if sa01 == 1:
-        faultValue = f2i_union.uint | (0x01<<bit)
-        if t01 == 0:f2i_union.uint = faultValue
-    else:
-        #f2i_union.uint = f2i_union.uint & ~(0x01<<bit)
-        # toggle bit-th bit in v
-        if t01 == 2: f2i_union.uint = f2i_union.uint ^ (1 << bit)
-    return f2i_union.float, f2i_union.uint
-
 def bitChange(v,bit,sa01):
     f2i_union = __f2i_union(v)
-    t01 = 0 if ( f2i_union.uint & (0x01<<bit) )==0 else 1
+    normal    = __f2i_union(v)
+    normal1s= bin(normal.uint).count("1")
     if sa01 == 1:
-        f2i_union.uint = f2i_union.uint | (0x01<<bit)
+        faultValue = f2i_union.uint | (0x01<<bit)
+        fault1s = bin(faultValue).count("1")
+        if (normal1s) != (fault1s) and (normal1s) != (fault1s - 1):
+            print("***** sa1>>>internal error bit operation {}-{}".format(normal1s,fault1s))
+    elif sa01 == 0:
+        faultValue = f2i_union.uint & ~(0x01<<bit)
+        fault1s = bin(faultValue).count("1")
+        if (normal1s) != (fault1s) and (normal1s) != (fault1s + 1):
+            print("***** sa0>>>internal error bit operation {}-{}".format(normal1s,fault1s))
     else:
-        f2i_union.uint = f2i_union.uint & ~(0x01<<bit)
+        assert False, "sa01 is out of value sa01={}".format(sa01)
+    f2i_union.uint = faultValue
     return f2i_union.float, f2i_union.uint
 
 # layer-0/1 hook
