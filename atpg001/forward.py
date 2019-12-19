@@ -43,4 +43,3 @@ if __name__ == '__main__':
     args = args.parse_args()
     var.n = -1 # No fault injection for Normal System case
     infer(inp=args.images)
-    copy_tree('dnn_params', 'original_data2')
