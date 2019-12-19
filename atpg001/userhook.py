@@ -78,7 +78,7 @@ class UserHook(link_hook.LinkHook):
 
     name = 'TimerHook'
 
-    def __init__(self,save_all=True,save_dir='dnn_params',verbose=False):
+    def __init__(self,save_all=False,save_dir='dnn_params',verbose=False):
         self.call_history = []
         self._running_stack = []
         self._depth = 0
