@@ -2,7 +2,6 @@ import numpy as np
 import bitstring
 from pdb import *
 from chainer.functions.connection.linear import linear
-from block_error import func
 
 from userfunc_var import VAR, GenFP
 var = VAR()
