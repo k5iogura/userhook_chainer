@@ -30,14 +30,21 @@ class VAR:
     @os.setter
     def os(self,val):VAR.__os=val
 
-    def init(self, Batch=1024, Net_spec=(28*28,50,50,10), Bit_spec=32, Sa01=(0,1)):
+    def init(self, Batch=1024, Net_spec=(28*28,50,50,10), Bit_spec=32, Sa01=(0,1), target=None):
         VAR.batch    = Batch
         VAR.net_spec = Net_spec
         VAR.bit_spec = Bit_spec
         VAR.sa01     = Sa01
-        #VAR.batch    = 1024
-        #VAR.net_spec = (28*28,50,50,10)
-        #VAR.bit_spec = 32
-        #VAR.sa01     = (0,1)
-        VAR.faultN   = np.sum(VAR.net_spec) * VAR.bit_spec * len(VAR.sa01)
-        VAR.faultpat = GenFP(VAR.net_spec, VAR.bit_spec, VAR.sa01)
+        if target is None:
+            VAR.faultN   = np.sum(VAR.net_spec) * VAR.bit_spec * len(VAR.sa01)
+            VAR.faultpat = GenFP(VAR.net_spec, VAR.bit_spec, VAR.sa01)
+        else:
+            targetFaults = np.load(target)
+            print('Loading Specified Falut List from {} total {} faults'.format(target, len(targetFaults)))
+            VAR.faultN   = len(targetFaults)
+            targetFaultsList = [ i for i in targetFaults.tolist() ]
+            detect_flag_idx  = 0
+            for i in targetFaultsList: i.insert( detect_flag_idx, False )
+            VAR.faultpat = np.asarray(targetFaultsList)
+            print(VAR.faultpat)
+
