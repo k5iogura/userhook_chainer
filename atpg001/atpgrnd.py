@@ -127,7 +127,7 @@ while True:
         print('* Saving detected fault points, pattern and expected into',args.dt_list+'.npy')
         np.save(args.dt_list, fault_injection_table)
         print('* Saving undetected fault points list into',args.ud_list+'.npy')
-        ud_table = np.asarray([i[detect_flag_idx:] for i in var.faultpat if i[0] is False])
+        ud_table = np.asarray([i[layer_idx:] for i in var.faultpat if i[0] is False])
         np.save(args.ud_list, ud_table)
     else:
         break
