@@ -22,7 +22,7 @@ args.add_argument('-s','--sa',        type=int,  default=None)
 args.add_argument('-t','--targetFile',type=str,  default=None, help='fault simulation target file')
 args.add_argument('-u','--ud_list',   type=str,  default='ud_list')
 args.add_argument('-d','--dt_list',   type=str,  default='dt_list')
-args.add_argument('--batch',          type=int,  default=1024)
+args.add_argument('--batch',          type=int,  default=1024+784)
 args.add_argument('--seed',           type=int,  default=2222222222)
 args.add_argument('--upper8bit',      type=int,  default=30, help='specify as %')
 args.add_argument('--positive_only',  type=bool, default=False)
@@ -48,7 +48,8 @@ def RxX(X, positive_only, u8b):
 
     if randint(0,100)<=u8b: # make upper 8bit at random
         rndV = __f2i_union(rndV)
-        rndV.uint = rndV.uint | np.uint32(np.uint8(randint(0,255))<<24)
+        #rndV.uint = rndV.uint | np.uint32(np.uint8(randint(0,255))<<24)
+        rndV.uint = rndV.uint | np.uint32(randint(0,0x0f)<<27)
         rndV = rndV.uint
 
     if positive_only:       # enforce data to positive
@@ -64,6 +65,13 @@ def GenRndPatFloat32(batch, img_hw=28, img_ch=1, X=1., u8b=30, pos_only=False):
     randpat = []
     for b in range(batch):
         randpat.append([np.clip(RxX(X, pos_only, u8b),minf32,maxf32) for i in range(pow(img_hw,2)*img_ch)])
+    # Update patterns with OneHot
+    for oh in range(784):
+        randpat[oh] = [0.0]*pow(img_hw,2)
+        #oneHot      = RxX(X, pos_only,  u8b=100)
+        oneHot      = 1.111111111   # 0b111111100011100011100011100100
+        randpat[oh][ randint(0,pow(img_hw,2)*img_ch-1) ] = oneHot
+        #randpat[oh][ randint(0,pow(img_hw,2)*img_ch-1) ] = 1.111111111
     return np.asarray(randpat, dtype=np.float32).reshape(-1, img_hw, img_hw, img_ch)
 
 # << Calculator fault difference function >>
@@ -122,20 +130,20 @@ while True:
             print('* Matched fault insertion run and normal system run, Discard')
 
     if detects>0: # Create new random patterns
-        print('* Creating New {} Test pattern'.format(var.batch))
         subsum += detects
-        Test_Patterns = GenRndPatFloat32(var.batch,X=args.randmax,pos_only=args.positive_only,u8b=args.upper8bit)
+        RetryNo+=1
         print('* Detected fault points det/subsum/all/% = {}/{}/{}/{:.4f}%'.format(
             detects, subsum, var.faultN, 100.*subsum/var.faultN))
-        print('* Generating Expected value of normal system')
-        var.n = -1  # For normal system inference
-        BeforeSMax, AfterSMax = forward.infer(Test_Patterns)
-        RetryNo+=1
         print('* Saving detected fault points, pattern and expected into',args.dt_list+'.npy')
         np.save(args.dt_list, fault_injection_table)
         print('* Saving undetected fault points list into',args.ud_list+'.npy')
         ud_table = np.asarray([i[layer_idx:] for i in var.faultpat if i[0] is False])
         np.save(args.ud_list, ud_table)
+        print('* Creating New {} Test pattern'.format(var.batch))
+        Test_Patterns = GenRndPatFloat32(var.batch,X=args.randmax,pos_only=args.positive_only,u8b=args.upper8bit)
+        print('* Generating Expected value of normal system')
+        var.n = -1  # For normal system inference
+        BeforeSMax, AfterSMax = forward.infer(Test_Patterns)
         print('* Unique {} Random Patterns to Detect'.format(len(patSerrialNos)))
     else:
         break
