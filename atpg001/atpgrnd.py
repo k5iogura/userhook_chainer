@@ -118,19 +118,20 @@ while True:
 
         # Choice test pattern to detect fault point
         if diff.any():  # case detected
-            var.faultpat[var.n][detect_flag_idx]=True
             detInfo = np.where(diff)    # detInfo 0:pattern_index 1:output_index
             detPtNo = detInfo[0][0]
             detColm = detInfo[1][0]
-            if Test_Patterns[detPtNo][detColm] is np.inf or BeforeSMax[detPtNo].data[detColm] is np.inf:
+            if Test_Patterns[detPtNo][detColm] is np.inf or BeforeSMax.data[detPtNo][detColm] is np.inf:
                 print('\***** Warning np.inf FaultSim:{} <-> NormalSim:{}'.format(
                     beforeSMax[detPtNo][detColm],BeforeSMax[detPtNo].data[detColm]))
-            fault_injection_table.append( [ spec, Test_Patterns[detPtNo], BeforeSMax[detPtNo].data ] )
-            detects += 1
-            SerrialNo = detPtNo + RetryNo * var.batch
-            patSerrialNos.add(SerrialNo)
-            print('> detect fault faultNo={:6d} detPtNo={:6d} detects={:6d} spec={}'.format(
-                var.n, SerrialNo, detects, spec[1:]))
+            else:
+                var.faultpat[var.n][detect_flag_idx]=True
+                fault_injection_table.append([ spec, Test_Patterns[detPtNo], BeforeSMax.data[detPtNo] ])
+                detects += 1
+                SerrialNo = detPtNo + RetryNo * var.batch
+                patSerrialNos.add(SerrialNo)
+                print('> detect fault faultNo={:6d} detPtNo={:6d} detects={:6d} spec={}'.format(
+                    var.n, SerrialNo, detects, spec[1:]))
         elif 0: # case not detected, inserted faults disappeared, discard the patterns
             print('* Matched fault insertion run and normal system run, Discard')
 
