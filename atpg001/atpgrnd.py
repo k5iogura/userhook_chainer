@@ -24,7 +24,7 @@ args.add_argument('-u','--ud_list',   type=str,  default='ud_list')
 args.add_argument('-d','--dt_list',   type=str,  default='dt_list')
 args.add_argument('--batch',          type=int,  default=1024+784)
 args.add_argument('--seed',           type=int,  default=2222222222)
-args.add_argument('--upper8bit',      type=int,  default=30, help='specify as %')
+args.add_argument('--upper8bit',      type=int,  default=1, help='specify as %')
 args.add_argument('--positive_only',  type=bool, default=False)
 args.add_argument('-r','--randmax',   type=float,default=255.0)
 args = args.parse_args()
@@ -120,7 +120,7 @@ while True:
         if diff.any():  # case detected
             var.faultpat[var.n][detect_flag_idx]=True
             detPtNo = np.where(diff)[0][0]
-            fault_injection_table.append( [ spec, Test_Patterns[detPtNo], BeforeSMax[detPtNo] ] )
+            fault_injection_table.append( [ spec, Test_Patterns[detPtNo], BeforeSMax[detPtNo].data ] )
             detects += 1
             SerrialNo = detPtNo + RetryNo * var.batch
             patSerrialNos.add(SerrialNo)
