@@ -22,12 +22,16 @@ args.add_argument('-s','--sa',        type=int,  default=None)
 args.add_argument('-t','--targetFile',type=str,  default=None, help='fault simulation target file')
 args.add_argument('-u','--ud_list',   type=str,  default='ud_list')
 args.add_argument('-d','--dt_list',   type=str,  default='dt_list')
-args.add_argument('--batch',          type=int,  default=1024+784)
+args.add_argument('--batch',          type=int,  default=1024)
 args.add_argument('--seed',           type=int,  default=2222222222)
-args.add_argument('--upper8bit',      type=int,  default=1, help='specify as %')
-args.add_argument('--positive_only',  type=bool, default=False)
+args.add_argument('--upper8bit',      type=int,  default=1,   help='specify as %')
+args.add_argument('--onehot',         type=int,  default=784, help='onehot patterns')
+args.add_argument('--pos_only',       action='store_true')
 args.add_argument('-r','--randmax',   type=float,default=255.0)
 args = args.parse_args()
+
+# add heuristic patterns
+args.batch += args.onehot
 
 # << Generate fault list >>
 seed(args.seed)
@@ -42,31 +46,32 @@ var.init(Batch=args.batch, Net_spec=net_spec, target=args.targetFile)
 
 # << random number generators for int32 and float32 >>
 # python random function generates 53bit float random number by Mersenne twister
-def RxX(X, positive_only, u8b):
+def RxX(X, pos_only, u8b):
 
     rndV   = X*random()     # generate a value at random
 
+    rndV = __f2i_union(rndV)
     if randint(0,100)<=u8b: # make upper 8bit at random
-        rndV = __f2i_union(rndV)
         #rndV.uint = rndV.uint | np.uint32(np.uint8(randint(0,255))<<24)
         rndV.uint = rndV.uint | np.uint32(randint(0,0x0f)<<27)
-        rndV = rndV.uint
+        #rndV.uint = rndV.uint | np.uint32(randint(0,0xff)<<24)
+        #rndV = rndV.uint
 
-    if positive_only:       # enforce data to positive
-        if rndV>=0.: return rndV
-        else       : return -rndV
+    if pos_only:       # enforce data to positive
+        if rndV.float>=0.: return rndV.float
+        else       : return -rndV.float
     else:                   # generate nega/posi value
         negpos = 1 if randint(0,1)==1 else -1
-        return np.float32(negpos * rndV)
+        return np.float32(negpos * rndV.float)
 
-def GenRndPatFloat32(batch, img_hw=28, img_ch=1, X=1., u8b=30, pos_only=False):
+def GenRndPatFloat32(batch, img_hw=28, img_ch=1, X=1., u8b=1, onehot=784, pos_only=False):
     maxf32 = np.finfo(np.float32).max
     minf32 = np.finfo(np.float32).min
     randpat = []
     for b in range(batch):
         randpat.append([np.clip(RxX(X, pos_only, u8b),minf32,maxf32) for i in range(pow(img_hw,2)*img_ch)])
     # Update patterns with OneHot
-    for oh in range(784):
+    for oh in range(onehot):
         randpat[oh] = [0.0]*pow(img_hw,2)
         #oneHot      = RxX(X, pos_only,  u8b=100)
         oneHot      = 1.111111111   # 0b111111100011100011100011100100
@@ -88,7 +93,9 @@ def faultDiff(A,B):
 #   B(b)eforeSMax type is chainer.variable.Variable
 #   A(a)fterSMax  type is numpy.ndarray
 print('* Generating Test Pattern with batch ',var.batch)
-Test_Patterns = GenRndPatFloat32(var.batch,X=args.randmax,pos_only=args.positive_only,u8b=args.upper8bit)
+Test_Patterns = GenRndPatFloat32(
+    var.batch, X=args.randmax, pos_only=args.pos_only, u8b=args.upper8bit, onehot=args.onehot
+)
 print('* Generating Expected value of normal system')
 var.n = -1  # For normal system inference
 BeforeSMax, AfterSMax = forward.infer(Test_Patterns)
@@ -118,12 +125,14 @@ while True:
 
         # Choice test pattern to detect fault point
         if diff.any():  # case detected
-            detInfo = np.where(diff)    # detInfo 0:pattern_index 1:output_index
+                                        # <diff>    dim-0:pattern          / dim01:fault point
+            detInfo = np.where(diff)    # <detInfo> dim-0:differencial row / dim-1:differencial column
             detPtNo = detInfo[0][0]
             detColm = detInfo[1][0]
             if Test_Patterns[detPtNo][detColm] is np.inf or BeforeSMax.data[detPtNo][detColm] is np.inf:
+                # Discard infinite calculation result
                 print('\***** Warning np.inf FaultSim:{} <-> NormalSim:{}'.format(
-                    beforeSMax[detPtNo][detColm],BeforeSMax[detPtNo].data[detColm]))
+                    beforeSMax[detPtNo][detColm],BeforeSMax.data[detPtNo][detColm]))
             else:
                 var.faultpat[var.n][detect_flag_idx]=True
                 fault_injection_table.append([ spec, Test_Patterns[detPtNo], BeforeSMax.data[detPtNo] ])
@@ -146,7 +155,9 @@ while True:
         ud_table = np.asarray([i[layer_idx:] for i in var.faultpat if i[0] is False])
         np.save(args.ud_list, ud_table)
         print('* Creating New {} Test pattern'.format(var.batch))
-        Test_Patterns = GenRndPatFloat32(var.batch,X=args.randmax,pos_only=args.positive_only,u8b=args.upper8bit)
+        Test_Patterns = GenRndPatFloat32(
+            var.batch, X=args.randmax, pos_only=args.pos_only, u8b=args.upper8bit, onehot=args.onehot
+        )
         print('* Generating Expected value of normal system')
         var.n = -1  # For normal system inference
         BeforeSMax, AfterSMax = forward.infer(Test_Patterns)
