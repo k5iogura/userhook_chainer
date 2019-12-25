@@ -10,7 +10,7 @@ import chainer.links as L
 import chainer.functions as F
 from chainer import serializers
 from chainer import training
-from chainer.training import extensions
+from chainer.training import extensions, triggers
 from chainer.dataset import convert
 
 #　ニューラルネットワークの定義
@@ -86,11 +86,18 @@ def main():
     # 学習結果をコンソールに出力する
     trainer.extend(extensions.PrintReport(['epoch', 'main/loss', 'validation/main/loss', 'main/accuracy', 'validation/main/accuracy', 'elapsed_time']))
 
+    # Saving at updated test-accuracy
+    trigger = triggers.MaxValueTrigger('validation/main/accuracy', trigger=(1, 'epoch'))
+    trainer.extend(extensions.snapshot_object(model, filename='mnist-cnn-best'), trigger=trigger)
+
     # プログレスバーの表示
     trainer.extend(extensions.ProgressBar())
 
     # 学習を始める
     trainer.run()
+
+    # Saving model final
+    serializers.save_npz('mnist-cnn.npz', model)
 
 if __name__ == '__main__':
     main()
