@@ -51,7 +51,7 @@ def RxX(X, pos_only, u8b):
     rndV   = X*random()     # generate a value at random
 
     rndV = __f2i_union(rndV)
-    if randint(0,100)<=u8b: # make upper 8bit at random
+    if randint(1,100)<=u8b: # make upper 8bit at random
         #rndV.uint = rndV.uint | np.uint32(np.uint8(randint(0,255))<<24)
         rndV.uint = rndV.uint | np.uint32(randint(0,0x0f)<<27)
         #rndV.uint = rndV.uint | np.uint32(randint(0,0xff)<<24)
