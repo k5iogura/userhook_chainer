@@ -24,8 +24,8 @@ args.add_argument('-u','--ud_list',   type=str,  default='ud_list')
 args.add_argument('-d','--dt_list',   type=str,  default='dt_list')
 args.add_argument('--batch',          type=int,  default=1024)
 args.add_argument('--seed',           type=int,  default=2222222222)
-args.add_argument('--upper8bit',      type=int,  default=1,   help='specify as %')
-args.add_argument('--onehot',         type=int,  default=784, help='onehot patterns')
+args.add_argument('--upper8bit',      type=int,  default=0, help='specify as %')
+args.add_argument('--onehot',         type=int,  default=0, help='onehot patterns')
 args.add_argument('--pos_only',       action='store_true')
 args.add_argument('-r','--randmax',   type=float,default=255.0)
 args = args.parse_args()
@@ -35,13 +35,6 @@ args.batch += args.onehot
 
 # << Generate fault list >>
 seed(args.seed)
-#net_spec=(28*28, 50, 50, 10)
-#if args.layerNo is not None:
-    #if   args.layerNo == 0: net_spec=(28*28, 0, 0, 0)
-    #elif args.layerNo == 1: net_spec=(0, 50, 0, 0)
-    #elif args.layerNo == 2: net_spec=(0, 0, 50, 0)
-    #elif args.layerNo == 3: net_spec=(0, 0, 0, 10)
-#var.init(Batch=args.batch, Net_spec=net_spec, target=args.targetFile)
 net_spec=(28*28, 14*14*32, 7*7*64, 300, 10)
 if args.layerNo is not None:
     if   args.layerNo == 0: net_spec=(28*28,        0,      0,   0,  0)

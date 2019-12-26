@@ -16,6 +16,9 @@ var=VAR()
 model=CNN()
 serializers.load_npz('mnist.npz',model)
 
+_, test = chainer.datasets.get_mnist()
+txs, tts = test._datasets
+
 def infer(txs):
 
     x = txs.transpose((0, 3, 2, 1)) # BHWC -> BCHW
@@ -31,7 +34,8 @@ def infer(txs):
 
 if __name__ == '__main__':
     args = argparse.ArgumentParser()
-    args.add_argument('-i','--images',type=int,default=len(tts))
+    args.add_argument('-i','--images',type=int,default=10)
     args = args.parse_args()
     var.n = -1 # No fault injection for Normal System case
-    infer(inp=args.images)
+    txs_tmp = txs[:args.images].reshape(-1,28,28,1)
+    infer(txs=txs_tmp)
