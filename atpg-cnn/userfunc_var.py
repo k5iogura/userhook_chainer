@@ -1,7 +1,7 @@
 import numpy as np
 from pdb import set_trace
 
-def GenFP(net_spec = ( 28*28, 50, 50, 10 ),bits = 32, sa01 = (1,0)):
+def GenFP(net_spec = (28*28, 14*14*32, 7*7*64, 300, 10), bits = 32, sa01 = (1,0)):
     layers   = len(net_spec)
 
     faultpat = []
@@ -30,7 +30,7 @@ class VAR:
     @os.setter
     def os(self,val):VAR.__os=val
 
-    def init(self, Batch=1024, Net_spec=(28*28,50,50,10), Bit_spec=32, Sa01=(0,1), target=None):
+    def init(self, Batch=1024, Net_spec=(28*28, 14*14*32, 7*7*64, 300, 10), Bit_spec=32, Sa01=(0,1), target=None):
         VAR.batch    = Batch
         VAR.net_spec = Net_spec
         VAR.bit_spec = Bit_spec

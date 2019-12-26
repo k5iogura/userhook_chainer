@@ -13,12 +13,12 @@ from pdb import *
 from userfunc_var import VAR
 var=VAR()
 
-model=NeuralNet(50,10)
+model=CNN()
 serializers.load_npz('mnist.npz',model)
 
 def infer(txs):
 
-    x = txs.reshape((-1,28,28,1))
+    x = txs.transpose((0, 3, 2, 1)) # BHWC -> BCHW
 
     hook = UserHook()
     with chainer.using_config('train',False):
