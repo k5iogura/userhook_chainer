@@ -62,18 +62,6 @@ def lx1_Linear(_in,_out):
         this_linear_out = this_linear_out.reshape(_out.data.shape)
         _out.data = this_linear_out.data
 
-    if layer == 10:
-        g = _out.data.copy()
-        for i in range(batch):
-            normal = g[ i ][ node//go_size ]
-            v_float, v_uint = bitChange(normal, bit, sa01)
-            g[ i ][ node//go_size ] = np.float32(v_float)
-        if 0:
-            print("{:8d} faultpattern={}".format(var.n, var.faultpat[var.n]))
-            print(' '*8, np.max(_out.data), '=>', np.max(g), np.min(_out.data), '=>', np.min(g))
-        _out.data = g
-
-
 # layer-2 hook
 def ly2_Linear(_in,_out):
     if var.n<0: # No fault injection for Normal System case
@@ -99,18 +87,6 @@ def ly2_Linear(_in,_out):
         this_linear_out = linear(_in.args[0], _in.link.__dict__['W'], _in.link.__dict__['b'])
         this_linear_out = this_linear_out.reshape(_out.data.shape)
         _out.data = this_linear_out.data
-
-    if layer == 20:
-        g = _out.data.copy()
-        for i in range(batch):
-            normal = g[ i ][ node//go_size ]
-            v_float, v_uint = bitChange(normal, bit, sa01)
-            g[ i ][ node//go_size ] = np.float32(v_float)
-        if 0:
-            print("{:8d} faultpattern={}".format(var.n, var.faultpat[var.n]))
-            print(' '*8, np.max(_out.data), '=>', np.max(g), np.min(_out.data), '=>', np.min(g))
-        _out.data = g
-
 
 # layer-3 hook
 def lz3_Linear(_in,_out):
