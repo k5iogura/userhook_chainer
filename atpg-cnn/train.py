@@ -84,7 +84,6 @@ def main():
         accuracy_train, loss_train = check_accuracy(model, xs[i_xs],   ts[i_xs]  )
         accuracy_test, _           = check_accuracy(model, txs[i_txs], tts[i_txs])
 
-        #print("Epoch %d loss(train) = %f, accuracy(train) = %f, accuracy(test) = %f" % (i + 1, loss_train.data, accuracy_train, accuracy_test))
         print(
             "Epoch {:4d} loss(train) = {:8.4f}, accuracy(train) = {:8.4f}, accuracy(test) = {:8.4f}".format(
                 i + 1, loss_train.data, accuracy_train, accuracy_test)
