@@ -16,12 +16,9 @@ var=VAR()
 model=CNN()
 serializers.load_npz('mnist.npz',model)
 
-_, test = chainer.datasets.get_mnist()
-txs, tts = test._datasets
-
 def infer(txs):
 
-    x = txs.transpose((0, 3, 2, 1)) # BHWC -> BCHW
+    x = txs.transpose((0, 3, 1, 2)) # BHWC -> BCHW
 
     hook = UserHook()
     with chainer.using_config('train',False):
@@ -36,6 +33,14 @@ if __name__ == '__main__':
     args = argparse.ArgumentParser()
     args.add_argument('-i','--images',type=int,default=10)
     args = args.parse_args()
+
+    # loading dataset
+    _, test = chainer.datasets.get_mnist()
+    txs, tts = test._datasets
+
     var.n = -1 # No fault injection for Normal System case
     txs_tmp = txs[:args.images].reshape(-1,28,28,1)
-    infer(txs=txs_tmp)
+    before_softmax, after_softmax = infer(txs=txs_tmp)
+
+    print('GroundTruth:',tts[:args.images])
+    print('Inferenced :',after_softmax)
