@@ -35,12 +35,20 @@ args.batch += args.onehot
 
 # << Generate fault list >>
 seed(args.seed)
-net_spec=(28*28, 50, 50, 10)
+#net_spec=(28*28, 50, 50, 10)
+#if args.layerNo is not None:
+    #if   args.layerNo == 0: net_spec=(28*28, 0, 0, 0)
+    #elif args.layerNo == 1: net_spec=(0, 50, 0, 0)
+    #elif args.layerNo == 2: net_spec=(0, 0, 50, 0)
+    #elif args.layerNo == 3: net_spec=(0, 0, 0, 10)
+#var.init(Batch=args.batch, Net_spec=net_spec, target=args.targetFile)
+net_spec=(28*28, 14*14*32, 7*7*64, 300, 10)
 if args.layerNo is not None:
-    if   args.layerNo == 0: net_spec=(28*28, 0, 0, 0)
-    elif args.layerNo == 1: net_spec=(0, 50, 0, 0)
-    elif args.layerNo == 2: net_spec=(0, 0, 50, 0)
-    elif args.layerNo == 3: net_spec=(0, 0, 0, 10)
+    if   args.layerNo == 0: net_spec=(28*28,        0,      0,   0,  0)
+    elif args.layerNo == 1: net_spec=(0,     14*14*32,      0,   0,  0)
+    elif args.layerNo == 2: net_spec=(0,            0, 7*7*64,   0,  0)
+    elif args.layerNo == 3: net_spec=(0,            0,      0, 300,  0)
+    elif args.layerNo == 4: net_spec=(0,            0,      0,   0, 10)
 var.init(Batch=args.batch, Net_spec=net_spec, target=args.targetFile)
 #var.init(Batch=1024, Net_spec=(5,5,2,2))
 

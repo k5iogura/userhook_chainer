@@ -16,14 +16,7 @@ var=VAR()
 model=NeuralNet(50,10)
 serializers.load_npz('mnist.npz',model)
 
-#_, test = chainer.datasets.get_mnist()
-#txs, tts = test._datasets
-
 def infer(txs):
-#    print("*** infer ***")
-#    a = txs[:inp]
-#    print(":inp=:",inp)
-#    print("gt:input number  =" ,tts[:inp])
 
     x = txs.reshape((-1,28,28,1))
 
@@ -34,7 +27,6 @@ def infer(txs):
     softmax_a = F.softmax(before_softmax)
 
     after_softmax = np.argmax(softmax_a.data, axis=1)
-#    print("pr:answer number =",ans)
     return before_softmax, after_softmax
 
 if __name__ == '__main__':
