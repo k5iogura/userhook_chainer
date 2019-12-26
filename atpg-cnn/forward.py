@@ -42,5 +42,6 @@ if __name__ == '__main__':
     txs_tmp = txs[:args.images].reshape(-1,28,28,1)
     before_softmax, after_softmax = infer(txs=txs_tmp)
 
+    print('< Test Run >')
     print('GroundTruth:',tts[:args.images])
     print('Inferenced :',after_softmax)
