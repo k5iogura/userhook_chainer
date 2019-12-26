@@ -2,6 +2,7 @@ import numpy as np
 import bitstring
 from pdb import *
 from chainer.functions.connection.linear import linear
+from chainer.functions import convolution_2d
 
 from userfunc_var import VAR, GenFP
 var = VAR()
@@ -39,7 +40,47 @@ def bitChange(v,bit,sa01):
 #import numpy as np
 def conv1_Convolution2D(_in,_out):
     _name='conv1_Convolution2D'
-    pass
+    # _in.args[0].shape : batch, channels, in_size, in_size          (1024, 1, 28, 28)
+    # _out.shape        : batch, channels, go_size, go_size, go_size (1024, 32, 24, 24)
+    batch, in_channels, in_size, in_size = _in.args[0].shape
+    batch, go_channels, go_size, go_size = _out.data.shape
+
+    if var.n<0: # No fault injection for Normal System case check only
+        assert _in.args[0].dtype == np.float32, 'Unsupport input type {}'.format(_out.dtype)
+        assert _out.dtype        == np.float32, 'Unsupport out   type {}'.format(_out.dtype)
+        return
+
+    detect_flag, layer, node, bit, sa01 = var.faultpat[var.n]
+
+    if layer == 0:
+        # Update _in with sa01
+        g = _in.args[0].copy()
+        for i in range(batch):
+            normal = g[ i ][ 0 ][ node//in_size ][ node%in_size ]
+            v_float, v_uint = bitChange(normal, bit, sa01)
+            g[ i ][ 0 ][ node//in_size ][ node%in_size ] = np.float32(v_float)
+        if 0:
+            print("{:8d} faultpattern={}".format(var.n, var.faultpat[var.n]))
+            print(' '*8, np.max(_in.args[0]), '=>', np.max(g), np.min(_in.args[0]), '=>', np.min(g))
+        _in.args[0].data = g
+
+        # Get Link Convolution_2D attrigutes
+        x, w, b      = _in.args[0], _in.link.__dict__['W'], _in.link.__dict__['b'],
+        in_channels  = _in.link.in_channels
+        out_channels = _in.link.out_channels
+        ksize        = _in.link.ksize
+        stride       = _in.link.stride
+        pad          = _in.link.pad
+        # nobias       = _in.link.nobias    # not attribute of the class
+        dilate       = _in.link.dilate
+        groups       = _in.link.groups
+
+        # Calculate Convolution Layer after fault insertion
+        this_conv2d_out = convolution_2d(
+            x, w, b, stride=stride, pad=pad, dilate=dilate, groups=groups
+        )
+        this_conv2d_out = this_conv2d_out.reshape(_out.data.shape)
+        _out.data = this_conv2d_out.data
 
 def bn1_BatchNormalization(_in,_out):
     _name='bn1_BatchNormalization'
