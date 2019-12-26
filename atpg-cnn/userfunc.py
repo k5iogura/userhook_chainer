@@ -82,7 +82,7 @@ def conv1_Convolution2D(_in,_out):
             x, w, b, stride=stride, pad=pad, dilate=dilate, groups=groups
         )
         this_conv2d_out = this_conv2d_out.reshape(_out.data.shape)
-        _out.data = this_conv2d_out.data
+#        _out.data = this_conv2d_out.data
 
 def bn1_BatchNormalization(_in,_out):
     _name='bn1_BatchNormalization'
