@@ -48,6 +48,7 @@ def check_accuracy(model, xs, ts):
     cors = (ys == ts)
     num_cors = sum(cors)
     accuracy = num_cors / ts.shape[0]
+    set_trace()
     return accuracy, loss
 
 def main():
@@ -63,10 +64,10 @@ def main():
     txs = txs.reshape(-1,1,28,28) # BCHW
 
     bm = 100
-    bm = 10
+#    bm = 10
 
     #for i in range(100):
-    for i in range(10):
+    for i in range(20):
 
         #for j in range(600):
         for j in range(60):
