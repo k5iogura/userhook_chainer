@@ -12,6 +12,8 @@ from   random import seed, random, randint
 var = VAR()
 
 args = argparse.ArgumentParser()
+args.add_argument('-N','--normal_only',  action='store_true')
+
 args.add_argument('-l','--layerNo',   type=int,  default=None)
 
 args.add_argument('-L','--layerList', type=int,  nargs='+')
@@ -35,6 +37,9 @@ args = args.parse_args()
 args.batch += args.onehot
 
 print(args)
+# Warn no saving result
+if args.save_dt is False: print('* No saving detect pattern talble')
+
 # << Generate fault list >>
 seed(args.seed)
 net_spec=(28*28, 12*12*32, 4*4*64, 300, 10)
@@ -109,6 +114,7 @@ patSerrialNos         = set()
 subsum = 0
 RetryNo     = 0
 while True:
+    if args.normal_only:break   # skip fault simulation
     print('* << Try {:06d} >> fault simulation started'.format(RetryNo))
     detects = 0
     for var.n, spec in enumerate(var.faultpat):
@@ -142,7 +148,7 @@ while True:
                 detects += 1
                 SerrialNo = detPtNo + RetryNo * var.batch
                 patSerrialNos.add(SerrialNo)
-                print('> detect retry={:6d} faultNo={:6d} detPtNo={:6d} detects={:6d} spec={}'.format(
+                print('> detect try={:3d} faultNo={:6d} detPtNo={:6d} detects={:6d} spec={}'.format(
                     RetryNo, var.n, SerrialNo, detects, spec[1:]))
         elif 0: # case not detected, inserted faults disappeared, discard the patterns
             print('* Matched fault insertion run and normal system run, Discard')

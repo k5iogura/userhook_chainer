@@ -1,3 +1,4 @@
+import sys,os
 import numpy as np
 import bitstring
 from pdb import *
@@ -58,9 +59,9 @@ def conv1_Convolution2D(_in,_out):
         # Update _in with sa01
         g = _in.args[0].copy()
         for i in range(batch):
-            normal = g[ i ][ 0 ][ node//in_size ][ node%in_size ]
+            normal = g.reshape(batch, -1)[ i, node ]
             v_float, v_uint = bitChange(normal, bit, sa01)
-            g[ i ][ 0 ][ node//in_size ][ node%in_size ] = np.float32(v_float)
+            g.reshape(batch,-1)[ i, node ] = np.float32(v_float)
         if 0:
             print("{:8d} faultpattern={}".format(var.n, var.faultpat[var.n]))
             print(' '*8, np.max(_in.args[0]), '=>', np.max(g), np.min(_in.args[0]), '=>', np.min(g))
@@ -107,9 +108,9 @@ def conv2_Convolution2D(_in,_out):
         # Update _in with sa01
         g = _in.args[0].data.copy()
         for i in range(batch):
-            normal = g[ i ][ node//(in_size*in_size) ][ node//in_size ][ node%in_size ]
+            normal = g.reshape(batch, -1)[ i, node ]
             v_float, v_uint = bitChange(normal, bit, sa01)
-            g[ i ][ node//(in_size*in_size) ][ node//in_size ][ node%in_size ] = np.float32(v_float)
+            g.reshape(batch,-1)[ i, node ] = np.float32(v_float)
         if 0:
             print("{:8d} faultpattern={}".format(var.n, var.faultpat[var.n]))
             print(' '*8, np.max(_in.args[0]), '=>', np.max(g), np.min(_in.args[0]), '=>', np.min(g))
@@ -154,9 +155,9 @@ def l1_Linear(_in,_out):
         # Update _in with sa01
         g = _in.args[0].data.copy()
         for i in range(batch):
-            normal = g[ i ][ node//(in_size*in_size) ][ node//in_size ][ node%in_size ]
+            normal = g.reshape(batch, -1)[ i, node ]
             v_float, v_uint = bitChange(normal, bit, sa01)
-            g[ i ][ node//(in_size*in_size) ][ node//in_size ][ node%in_size ] = np.float32(v_float)
+            g.reshape(batch,-1)[ i, node ] = np.float32(v_float)
         if 0:
             print("{:8d} faultpattern={}".format(var.n, var.faultpat[var.n]))
             print(' '*8, np.max(_in.args[0]), '=>', np.max(g), np.min(_in.args[0]), '=>', np.min(g))
@@ -184,9 +185,9 @@ def l2_Linear(_in,_out):
         # Update _in with sa01
         g = _in.args[0].data.copy()
         for i in range(batch):
-            normal = g[ i ][ node%in_size ]
+            normal = g.reshape(batch, -1)[ i, node ]
             v_float, v_uint = bitChange(normal, bit, sa01)
-            g[ i ][ node%in_size ] = np.float32(v_float)
+            g.reshape(batch,-1)[ i, node ] = np.float32(v_float)
         if 0:
             print("{:8d} faultpattern={}".format(var.n, var.faultpat[var.n]))
             print(' '*8, np.max(_in.args[0]), '=>', np.max(g), np.min(_in.args[0]), '=>', np.min(g))
@@ -200,9 +201,9 @@ def l2_Linear(_in,_out):
     if layer == 4:
         g = _out.data.copy()
         for i in range(batch):
-            normal = g[ i ][ node//go_size ]
+            normal = g.reshape(batch, -1)[ i, node ]
             v_float, v_uint = bitChange(normal, bit, sa01)
-            g[ i ][ node//go_size ] = np.float32(v_float)
+            g.reshape(batch,-1)[ i, node ] = np.float32(v_float)
         if 0:
             print("{:8d} faultpattern={}".format(var.n, var.faultpat[var.n]))
             print(' '*8, np.max(_out.data), '=>', np.max(g), np.min(_out.data), '=>', np.min(g))
