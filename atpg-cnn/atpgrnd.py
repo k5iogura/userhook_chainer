@@ -22,6 +22,7 @@ args.add_argument('-s','--sa',        type=int,  default=None)
 args.add_argument('-t','--targetFile',type=str,  default=None, help='fault simulation target file')
 args.add_argument('-u','--ud_list',   type=str,  default='ud_list')
 args.add_argument('-d','--dt_list',   type=str,  default='dt_list')
+args.add_argument('-sd','--save_dt',  action='store_true', help='saving detect pat and expected pat')
 args.add_argument('--batch',          type=int,  default=1024)
 args.add_argument('--seed',           type=int,  default=2222222222)
 args.add_argument('--upper8bit',      type=int,  default=0, help='specify as %')
@@ -151,8 +152,9 @@ while True:
         RetryNo+=1
         print('* Detected fault points det/subsum/all/% = {}/{}/{}/{:.4f}%'.format(
             detects, subsum, var.faultN, 100.*subsum/var.faultN))
-        print('* Saving detected fault points, pattern and expected into',args.dt_list+'.npy')
-        np.save(args.dt_list, fault_injection_table)
+        if args.save_dt:
+            print('* Saving detected fault points, pattern and expected into',args.dt_list+'.npy')
+            np.save(args.dt_list, fault_injection_table)
         print('* Saving undetected fault points list into',args.ud_list+'.npy')
         ud_table = np.asarray([i[layer_idx:] for i in var.faultpat if i[0] is False])
         np.save(args.ud_list, ud_table)
