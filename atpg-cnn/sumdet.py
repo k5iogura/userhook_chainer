@@ -6,7 +6,8 @@ from   pdb import set_trace
 def countup(npy):
     layer_idx, node_idx, bit_idx, sa_idx = (0,1,2,3)
 
-    layer_stat = [0]*4
+  #  layer_stat = [0]*4
+    layer_stat = [0]*(np.max(npy[:,layer_idx])+1)
     for layer in npy[:,layer_idx]:
         layer_stat[layer]+=1
 
