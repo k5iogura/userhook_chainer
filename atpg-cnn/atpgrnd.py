@@ -9,7 +9,14 @@ from   userfunc_var import *
 from   userfunc import __f2i_union
 from   random import seed, random, randint
 
+# for sharing Class variables
 var = VAR()
+
+# PI setup
+try:
+    from pi_generator import pi_generator
+    if var.pi is not None: print('* Link pi_generator into atpg with PI {}'.format(var.pi))
+except: pass
 
 args = argparse.ArgumentParser()
 args.add_argument('-N','--normal_only',  action='store_true')
@@ -38,7 +45,7 @@ args.batch += args.onehot
 
 print(args)
 # Warn no saving result
-if args.save_dt is False: print('* No saving detect pattern talble')
+if args.save_dt is False: print('* No saving detect pattern table')
 
 # << Generate fault list >>
 seed(args.seed)
@@ -121,7 +128,7 @@ while True:
 
         # spec: [0]detect_flag [1]layer [2]node [3]bit [4]sa01
         (detect_flag_idx, layer_idx, node_idx, bit_idx, sa01_idx) = (0, 1, 2, 3, 4)
-        if spec[0]: continue
+        if spec[detect_flag_idx]: continue    # skip already detected fault list
 
         # For fault system inference
         beforeSMax, afterSMax = forward.infer(Test_Patterns)
@@ -152,6 +159,8 @@ while True:
                     RetryNo, var.n, SerrialNo, detects, spec[1:]))
         elif 0: # case not detected, inserted faults disappeared, discard the patterns
             print('* Matched fault insertion run and normal system run, Discard')
+
+    if var.pi is not None: break    # break when PI atpg
 
     if detects>0: # Create new random patterns
         subsum += detects

@@ -42,6 +42,7 @@ def bitChange(v,bit,sa01):
 
 def conv1_Convolution2D(_in,_out):
     _name='conv1_Convolution2D'
+    owner_layer = 0
     # _in.args[0].shape : batch, channels, in_size, in_size          (1024, 1, 28, 28)
     # _out.shape        : batch, channels, go_size, go_size, go_size (1024, 32, 24, 24)
     batch, in_channels, in_size, in_size = _in.args[0].shape
@@ -51,22 +52,22 @@ def conv1_Convolution2D(_in,_out):
         print(_name,'in/out =', _in.args[0].shape, _out.data.shape)
         assert _in.args[0].dtype == np.float32, 'Unsupport input type {}'.format(_out.dtype)
         assert _out.dtype        == np.float32, 'Unsupport out   type {}'.format(_out.dtype)
-        return
+    #    return
+    detect_flag, layer, node, bit, sa01 = var.faultpat[var.n] if var.n>=0 else [False,-1,-1,-1,-1]
 
-    detect_flag, layer, node, bit, sa01 = var.faultpat[var.n]
-
-    if layer == 0:
-        # Update _in with sa01
+    if layer == owner_layer or var.pi == _name:
         g = _in.args[0].copy()
-        for i in range(batch):
-            normal = g.reshape(batch, -1)[ i, node ]
-            v_float, v_uint = bitChange(normal, bit, sa01)
-            g.reshape(batch,-1)[ i, node ] = np.float32(v_float)
-        if 0:
-            print("{:8d} faultpattern={}".format(var.n, var.faultpat[var.n]))
-            print(' '*8, np.max(_in.args[0]), '=>', np.max(g), np.min(_in.args[0]), '=>', np.min(g))
+        # Update _in as PI
+        if var.pi == _name:
+            for i in range(np.prod(g.shape)):
+                g.reshape(-1)[i] = var.PIpat.reshape(-1)[i]
+        # Update _in with sa01
+        if layer == owner_layer:
+            for i in range(batch):
+                normal = g.reshape(batch, -1)[ i, node ]
+                v_float, v_uint = bitChange(normal, bit, sa01)
+                g.reshape(batch,-1)[ i, node ] = np.float32(v_float)
         _in.args[0].data = g
-
         # Get Link Convolution_2D attrigutes
         x, w, b      = _in.args[0], _in.link.__dict__['W'], _in.link.__dict__['b'],
         in_channels  = _in.link.in_channels
@@ -91,6 +92,7 @@ def bn1_BatchNormalization(_in,_out):
 
 def conv2_Convolution2D(_in,_out):
     _name='conv2_Convolution2D'
+    owner_layer = 1
     # _in.args[0].shape : batch, channels, in_size, in_size          (1024, 32, 12, 12)
     # _out.shape        : batch, channels, go_size, go_size, go_size (1024, 64, 8, 8)
     batch, in_channels, in_size, in_size = _in.args[0].shape
@@ -100,20 +102,22 @@ def conv2_Convolution2D(_in,_out):
         print(_name,'in/out =', _in.args[0].data.shape, _out.data.shape)
         assert _in.args[0].dtype == np.float32, 'Unsupport input type {}'.format(_out.dtype)
         assert _out.dtype        == np.float32, 'Unsupport out   type {}'.format(_out.dtype)
-        return
+    #    return
+    detect_flag, layer, node, bit, sa01 = var.faultpat[var.n] if var.n>=0 else [False,-1,-1,-1,-1]
 
-    detect_flag, layer, node, bit, sa01 = var.faultpat[var.n]
-
-    if layer == 1:
+    if layer == owner_layer or var.pi == _name:
         # Update _in with sa01
         g = _in.args[0].data.copy()
-        for i in range(batch):
-            normal = g.reshape(batch, -1)[ i, node ]
-            v_float, v_uint = bitChange(normal, bit, sa01)
-            g.reshape(batch,-1)[ i, node ] = np.float32(v_float)
-        if 0:
-            print("{:8d} faultpattern={}".format(var.n, var.faultpat[var.n]))
-            print(' '*8, np.max(_in.args[0]), '=>', np.max(g), np.min(_in.args[0]), '=>', np.min(g))
+        # Update _in as PI
+        if var.pi == _name:
+            for i in range(np.prod(g.shape)):
+                g.reshape(-1)[i] = var.PIpat.reshape(-1)[i]
+        # Update _in with sa01
+        if layer == owner_layer:
+            for i in range(batch):
+                normal = g.reshape(batch, -1)[ i, node ]
+                v_float, v_uint = bitChange(normal, bit, sa01)
+                g.reshape(batch,-1)[ i, node ] = np.float32(v_float)
         _in.args[0].data = g
 
         # Get Link Convolution_2D attrigutes
@@ -140,6 +144,7 @@ def bn2_BatchNormalization(_in,_out):
 
 def l1_Linear(_in,_out):
     _name='l1_Linear'
+    owner_layer = 2
     # _in.args[0].shape : batch, channels, in_size, in_size          (10, 64, 4, 4)
     # _out.shape        : batch, go_size                             (1024, 300)
     batch, in_channels, in_size, in_size = _in.args[0].shape
@@ -148,19 +153,21 @@ def l1_Linear(_in,_out):
         print(_name,'in/out           =', _in.args[0].data.shape, _out.data.shape)
         assert _in.args[0].dtype == np.float32, 'Unsupport input type {}'.format(_out.dtype)
         assert _out.dtype        == np.float32, 'Unsupport out   type {}'.format(_out.dtype)
-        return
-    detect_flag, layer, node, bit, sa01 = var.faultpat[var.n]
+    #    return
+    detect_flag, layer, node, bit, sa01 = var.faultpat[var.n] if var.n>=0 else [False,-1,-1,-1,-1]
 
-    if layer == 2:
-        # Update _in with sa01
+    if layer == owner_layer or var.pi == _name:
         g = _in.args[0].data.copy()
-        for i in range(batch):
-            normal = g.reshape(batch, -1)[ i, node ]
-            v_float, v_uint = bitChange(normal, bit, sa01)
-            g.reshape(batch,-1)[ i, node ] = np.float32(v_float)
-        if 0:
-            print("{:8d} faultpattern={}".format(var.n, var.faultpat[var.n]))
-            print(' '*8, np.max(_in.args[0]), '=>', np.max(g), np.min(_in.args[0]), '=>', np.min(g))
+        # Update _in as PI
+        if var.pi == _name:
+            for i in range(np.prod(g.shape)):
+                g.reshape(-1)[i] = var.PIpat.reshape(-1)[i]
+        # Update _in with sa01
+        if layer == owner_layer:
+            for i in range(batch):
+                normal = g.reshape(batch, -1)[ i, node ]
+                v_float, v_uint = bitChange(normal, bit, sa01)
+                g.reshape(batch,-1)[ i, node ] = np.float32(v_float)
         _in.args[0].data = g
         # Calculate Linear Layer after fault insertion
         x, w, b      = _in.args[0], _in.link.__dict__['W'], _in.link.__dict__['b'],
@@ -170,6 +177,7 @@ def l1_Linear(_in,_out):
 
 def l2_Linear(_in,_out):
     _name='l2_Linear'
+    owner_layer = 3
     # _in.args[0].shape : batch, in_size                             (1024, 300)
     # _out.shape        : batch, go_size                             (1024, 10)
     batch, in_size                       = _in.args[0].data.shape
@@ -178,19 +186,21 @@ def l2_Linear(_in,_out):
         print(_name,'in/out           =', _in.args[0].data.shape, _out.data.shape)
         assert _in.args[0].dtype == np.float32, 'Unsupport input type {}'.format(_out.dtype)
         assert _out.dtype        == np.float32, 'Unsupport out   type {}'.format(_out.dtype)
-        return
-    detect_flag, layer, node, bit, sa01 = var.faultpat[var.n]
+    #    return
+    detect_flag, layer, node, bit, sa01 = var.faultpat[var.n] if var.n>=0 else [False,-1,-1,-1,-1]
 
-    if layer == 3:
-        # Update _in with sa01
+    if layer == owner_layer or var.pi == _name:
         g = _in.args[0].data.copy()
-        for i in range(batch):
-            normal = g.reshape(batch, -1)[ i, node ]
-            v_float, v_uint = bitChange(normal, bit, sa01)
-            g.reshape(batch,-1)[ i, node ] = np.float32(v_float)
-        if 0:
-            print("{:8d} faultpattern={}".format(var.n, var.faultpat[var.n]))
-            print(' '*8, np.max(_in.args[0]), '=>', np.max(g), np.min(_in.args[0]), '=>', np.min(g))
+        # Update _in as PI
+        if var.pi == _name:
+            for i in range(np.prod(g.shape)):
+                g.reshape(-1)[i] = var.PIpat.reshape(-1)[i]
+        # Update _in with sa01
+        if layer == owner_layer:
+            for i in range(batch):
+                normal = g.reshape(batch, -1)[ i, node ]
+                v_float, v_uint = bitChange(normal, bit, sa01)
+                g.reshape(batch,-1)[ i, node ] = np.float32(v_float)
         _in.args[0].data = g
 
         # Calculate Linear Layer after fault insertion

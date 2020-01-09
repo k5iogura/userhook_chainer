@@ -17,8 +17,12 @@ def GenFP(net_spec = (28*28, 14*14*32, 7*7*64, 300, 10), bits = 32, sa01 = (1,0)
     return faultpat
 
 class VAR:
-    __os= 1  # 1:linux 0:Windows
     __n = 0
+
+    __pi = None
+    __po = None
+    __PIpat = None
+    __POpat = None
 
     @property
     def n(self):return VAR.__n
@@ -26,9 +30,24 @@ class VAR:
     def n(self,val):VAR.__n=val
 
     @property
-    def os(self):return VAR.__os
-    @os.setter
-    def os(self,val):VAR.__os=val
+    def pi(self):return VAR.__pi
+    @pi.setter
+    def pi(self,val):VAR.__pi=val
+
+    @property
+    def po(self):return VAR.__po
+    @po.setter
+    def po(self,val):VAR.__po=val
+
+    @property
+    def PIpat(self):return VAR.__PIpat
+    @PIpat.setter
+    def PIpat(self,val):VAR.__PIpat=val
+
+    @property
+    def POpat(self):return VAR.__POpat
+    @POpat.setter
+    def POpat(self,val):VAR.__POpat=val
 
     def init(self, Batch=1024, Net_spec=(28*28, 14*14*32, 7*7*64, 300, 10), Bit_spec=32, Sa01=(0,1), target=None):
         VAR.batch    = Batch
