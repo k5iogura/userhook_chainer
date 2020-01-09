@@ -19,7 +19,7 @@ var.pi = 'conv2_Convolution2D'  # layer = 1
 var.pi = 'l1_Linear'            # layer = 2
 var.pi = 'l2_Linear'            # layer = 3
 #
-var.pi = 'l1_Linear'            # layer = 2
+var.pi = None
 
 # pi_generator()
 # User Test Pattern Genenator for var.pi layer
