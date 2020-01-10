@@ -108,15 +108,15 @@ class UserHook(link_hook.LinkHook):
         # PI setup
         userhook_func = "%s_%s"%(args.link.name, args.link.__class__.__name__)
         if var.pi == userhook_func and var.PIpat is None:
-            try:
-                PI_Data  = args.args[0]
-                PI_Shape = args.args[0].shape
-                from pi_generator import pi_generator
-                print('* Generating Test Pattern for PI', var.pi, PI_Shape,'calling your pi_generator')
-                var.PIpat = pi_generator(PI_Data)
-            except:
-                print('Fatal Error: pi_generator.py is madatory with --pi option')
-                sys.exit(-1)
+            #try:
+            PI_Data  = args.args[0]
+            PI_Shape = args.args[0].shape
+            from pi_generator import pi_generator
+            print('* Generating Test Pattern for PI', var.pi, PI_Shape,'calling your pi_generator')
+            var.PIpat = pi_generator(PI_Data)
+            #except:
+            #    print('Fatal Error: pi_generator.py is madatory with --pi option')
+            #    sys.exit(-1)
             assert type(var.PIpat) is numpy.ndarray, 'Only numpy but {} from pi_generator'.format(type(var.PIpat))
             assert var.PIpat.shape == PI_Shape, 'Missmatch {} vs {}'.format(var.PIpat.shape, PI_Shape)
         self._preprocess()

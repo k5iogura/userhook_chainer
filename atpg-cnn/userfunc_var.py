@@ -67,3 +67,7 @@ class VAR:
             VAR.faultpat = np.asarray(targetFaultsList)
             print(VAR.faultpat)
 
+    def setpat(self, tableB, faultpat):
+        batch, h, w, c = faultpat.shape
+        VAR.batch   = batch
+        VAR.faultN  = tableB.shape[0]
