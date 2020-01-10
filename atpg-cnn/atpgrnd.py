@@ -32,7 +32,11 @@ args.add_argument('-t','--targetFile',type=str,  default=None, help='fault simul
 args.add_argument('-u','--ud_list',   type=str,  default='ud_list')
 args.add_argument('-d','--dt_list',   type=str,  default='dt_list')
 args.add_argument('-sd','--save_dt',  action='store_true', help='saving detect pat and expected pat')
+args.add_argument('-tB','--tableB',   type=str,  default='dt_tableB.npy')
+args.add_argument('-pB','--patternB', type=str,  default='dt_patternB.npy')
+
 args.add_argument('--batch',          type=int,  default=1024)
+args.add_argument('--bmax',           type=int,  default=1024*4)
 args.add_argument('--seed',           type=int,  default=2222222222)
 args.add_argument('--upper8bit',      type=int,  default=0, help='specify as %')
 args.add_argument('--onehot',         type=int,  default=0, help='onehot patterns')
@@ -102,6 +106,14 @@ def faultDiff(A,B):
     diff = [ __f2i_union(I).uint==__f2i_union(J).uint for I,J in zip(A.reshape(-1),B.reshape(-1)) ]
     return np.asarray(diff).reshape(A.shape)
 
+# << increase batch >>
+# max : 4096 min : batch
+def update_batch(Try, batch, bmax, Try2max=10):
+    alpha = (bmax-batch)/Try2max
+    x = int(batch + alpha * Try)
+    x = x if x <= bmax else bmax
+    return x
+
 # << Generating float32 patterns at random >>
 # Calculate inference result of Before or After of SoftMax
 # Notice!:
@@ -117,9 +129,12 @@ BeforeSMax, AfterSMax = forward.infer(Test_Patterns)
 
 print('* Fault Point insertion and varify')
 fault_injection_table = []
-patSerrialNos         = set()
+fault_injection_tableB = []
+fault_injection_tableI = 0
+fault_injection_tableP = []
 subsum = 0
 RetryNo     = 0
+patSerrialNos = set()
 while True:
     if args.normal_only:break   # skip fault simulation
     print('* << Try {:06d} >> fault simulation started'.format(RetryNo))
@@ -150,20 +165,28 @@ while True:
                 print('\***** Warning np.inf FaultSim:{} <-> NormalSim:{}'.format(
                     beforeSMax[detPtNo][detColm],BeforeSMax.data[detPtNo][detColm]))
             else:
-                var.faultpat[var.n][detect_flag_idx]=True
-                fault_injection_table.append([ spec, Test_Patterns[detPtNo], BeforeSMax.data[detPtNo] ])
                 detects += 1
+                var.faultpat[var.n][detect_flag_idx]=True
+                fault_injection_table.append ([ spec, Test_Patterns[detPtNo], BeforeSMax.data[detPtNo] ])
                 SerrialNo = detPtNo + RetryNo * var.batch
+                if not SerrialNo in patSerrialNos:
+                    fault_injection_tableP.append( [ SerrialNo, Test_Patterns[detPtNo] ] )
+                fault_injection_tableI = [ i for i,p in enumerate(fault_injection_tableP) if p[0] == SerrialNo ][0]
+                fault_injection_tableB.append([ spec[layer_idx:], fault_injection_tableI, BeforeSMax.data[detPtNo] ])
                 patSerrialNos.add(SerrialNo)
                 print('> detect try={:3d} faultNo={:6d} detPtNo={:6d} detects={:6d} spec={}'.format(
                     RetryNo, var.n, SerrialNo, detects, spec[1:]))
         elif 0: # case not detected, inserted faults disappeared, discard the patterns
             print('* Matched fault insertion run and normal system run, Discard')
 
-    if var.pi is not None: break    # break when PI atpg
-
     if detects>0: # Create new random patterns
+        # write TableB out
+        print('* Saving detected fault points, pattern and expected into as tableB', args.tableB, args.patternB)
+        np.save(args.tableB,   np.asarray(fault_injection_tableB))
+        np.save(args.patternB, np.asarray([ i[-1] for i in fault_injection_tableP ]))
+
         subsum += detects
+        if var.batch < args.bmax: var.batch = update_batch( Try=RetryNo, batch=var.batch, bmax=args.bmax, Try2max=10)
         RetryNo+=1
         print('* Detected fault points det/subsum/all/% = {}/{}/{}/{:.4f}%'.format(
             detects, subsum, var.faultN, 100.*subsum/var.faultN))
@@ -181,10 +204,10 @@ while True:
         var.n = -1  # For normal system inference
         BeforeSMax, AfterSMax = forward.infer(Test_Patterns)
         print('* Unique {} Random Patterns to Detect'.format(len(patSerrialNos)))
-    else:
-        break
+    else: break
 
-#    break   # for debugging
+    if var.pi is not None: break    # break when PI atpg
+
 if var.faultN>0:
     print('* Summary for Detected fault points det/all/%={}/{}/{:.3f}%'.format(
         subsum,var.faultN,100.*subsum/var.faultN)
