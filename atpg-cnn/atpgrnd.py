@@ -54,12 +54,23 @@ if args.save_dt is False: print('* No saving detect pattern table')
 # << Generate fault list >>
 seed(args.seed)
 net_spec=(28*28, 12*12*32, 4*4*64, 300, 10)
+#if args.layerNo is not None:
+#    if   args.layerNo == 0: net_spec=(28*28,        0,      0,   0,  0)
+#    elif args.layerNo == 1: net_spec=(0,     12*12*32,      0,   0,  0)
+#    elif args.layerNo == 2: net_spec=(0,            0, 4*4*64,   0,  0)
+#    elif args.layerNo == 3: net_spec=(0,            0,      0, 300,  0)
+#    elif args.layerNo == 4: net_spec=(0,            0,      0,   0, 10)
+layerSet = set()
 if args.layerNo is not None:
-    if   args.layerNo == 0: net_spec=(28*28,        0,      0,   0,  0)
-    elif args.layerNo == 1: net_spec=(0,     12*12*32,      0,   0,  0)
-    elif args.layerNo == 2: net_spec=(0,            0, 4*4*64,   0,  0)
-    elif args.layerNo == 3: net_spec=(0,            0,      0, 300,  0)
-    elif args.layerNo == 4: net_spec=(0,            0,      0,   0, 10)
+    layerSet.add(args.layerNo)
+if args.layerList is not None:
+    [layerSet.add(i) for i in args.layerList]
+if args.layerNo is not None or args.layerList is not None:
+    net_specList = [0]*len(net_spec)
+    for i in layerSet:
+        net_specList[i] = net_spec[i]
+    net_spec = tuple(net_specList)
+
 var.init(Batch=args.batch, Net_spec=net_spec, target=args.targetFile)
 #var.init(Batch=1024, Net_spec=(5,5,2,2))
 
@@ -206,7 +217,7 @@ while True:
         print('* Unique {} Random Patterns to Detect'.format(len(patSerrialNos)))
     else: break
 
-    if var.pi is not None: break    # break when PI atpg
+#    if var.pi is not None: break    # break when PI atpg
 
 if var.faultN>0:
     print('* Summary for Detected fault points det/all/%={}/{}/{:.3f}%'.format(
