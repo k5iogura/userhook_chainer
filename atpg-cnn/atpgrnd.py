@@ -21,12 +21,10 @@ except: pass
 args = argparse.ArgumentParser()
 args.add_argument('-N','--normal_only',  action='store_true')
 
-args.add_argument('-l','--layerNo',   type=int,  default=None)
-
-args.add_argument('-L','--layerList', type=int,  nargs='+')
-args.add_argument('-n','--nodeNo',    type=int,  default=None)
-args.add_argument('-b','--bitNo',     type=int,  default=None)
-args.add_argument('-s','--sa',        type=int,  default=None)
+args.add_argument('-l','--layerNo',   type=int,  nargs='+', default=None)
+args.add_argument('-n','--nodeNo',    type=int,  nargs='+', default=None)
+args.add_argument('-b','--bitNo',     type=int,  nargs='+', default=None)
+args.add_argument('-s','--sa',        type=int,  nargs='+', default=None)
 
 args.add_argument('-t','--targetFile',type=str,  default=None, help='fault simulation target file')
 args.add_argument('-u','--ud_list',   type=str,  default='ud_list')
@@ -40,6 +38,7 @@ args.add_argument('--bmax',           type=int,  default=1024*4)
 args.add_argument('--seed',           type=int,  default=2222222222)
 args.add_argument('--upper8bit',      type=int,  default=0, help='specify as %')
 args.add_argument('--onehot',         type=int,  default=0, help='onehot patterns')
+args.add_argument('--retrymax',       type=int,  default=10000)
 args.add_argument('--pos_only',       action='store_true')
 args.add_argument('-r','--randmax',   type=float,default=255.0)
 args = args.parse_args()
@@ -54,25 +53,13 @@ if args.save_dt is False: print('* No saving detect pattern table')
 # << Generate fault list >>
 seed(args.seed)
 net_spec=(28*28, 12*12*32, 4*4*64, 300, 10)
-#if args.layerNo is not None:
-#    if   args.layerNo == 0: net_spec=(28*28,        0,      0,   0,  0)
-#    elif args.layerNo == 1: net_spec=(0,     12*12*32,      0,   0,  0)
-#    elif args.layerNo == 2: net_spec=(0,            0, 4*4*64,   0,  0)
-#    elif args.layerNo == 3: net_spec=(0,            0,      0, 300,  0)
-#    elif args.layerNo == 4: net_spec=(0,            0,      0,   0, 10)
 layerSet = set()
 if args.layerNo is not None:
-    layerSet.add(args.layerNo)
-if args.layerList is not None:
-    [layerSet.add(i) for i in args.layerList]
-if args.layerNo is not None or args.layerList is not None:
+    _ = [layerSet.add(i) for i in args.layerNo]
     net_specList = [0]*len(net_spec)
-    for i in layerSet:
-        net_specList[i] = net_spec[i]
+    for i in layerSet: net_specList[i] = net_spec[i]
     net_spec = tuple(net_specList)
-
 var.init(Batch=args.batch, Net_spec=net_spec, target=args.targetFile)
-#var.init(Batch=1024, Net_spec=(5,5,2,2))
 
 # << random number generators for int32 and float32 >>
 # python random function generates 53bit float random number by Mersenne twister
@@ -82,10 +69,7 @@ def RxX(X, pos_only, u8b):
 
     rndV = __f2i_union(rndV)
     if randint(1,100)<=u8b: # make upper 8bit at random
-        #rndV.uint = rndV.uint | np.uint32(np.uint8(randint(0,255))<<24)
         rndV.uint = rndV.uint | np.uint32(randint(0,0x0f)<<27)
-        #rndV.uint = rndV.uint | np.uint32(randint(0,0xff)<<24)
-        #rndV = rndV.uint
 
     if pos_only:       # enforce data to positive
         if rndV.float>=0.: return rndV.float
@@ -103,10 +87,8 @@ def GenRndPatFloat32(batch, img_hw=28, img_ch=1, X=1., u8b=1, onehot=784, pos_on
     # Update patterns with OneHot
     for oh in range(onehot):
         randpat[oh] = [0.0]*pow(img_hw,2)
-        #oneHot      = RxX(X, pos_only,  u8b=100)
         oneHot      = 1.111111111   # 0b111111100011100011100011100100
         randpat[oh][ randint(0,pow(img_hw,2)*img_ch-1) ] = oneHot
-        #randpat[oh][ randint(0,pow(img_hw,2)*img_ch-1) ] = 1.111111111
     return np.asarray(randpat, dtype=np.float32).reshape(-1, img_hw, img_hw, img_ch)
 
 # << Calculator fault difference function >>
@@ -217,7 +199,9 @@ while True:
         print('* Unique {} Random Patterns to Detect'.format(len(patSerrialNos)))
     else: break
 
-#    if var.pi is not None: break    # break when PI atpg
+    if RetryNo > args.retrymax:
+        print('Stop simulation {}th at over --retrymax {}'.format(RetryNo, args.retrymax))
+        break
 
 if var.faultN>0:
     print('* Summary for Detected fault points det/all/%={}/{}/{:.3f}%'.format(
