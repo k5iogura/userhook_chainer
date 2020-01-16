@@ -8,6 +8,7 @@ import numpy
 from chainer.backends import cuda
 from chainer import link_hook
 from userfunc_var import VAR, GenFP
+from rnd_generator import GenRndPatFloat32
 from pdb import set_trace
 
 # For UserHook Extension
@@ -108,15 +109,28 @@ class UserHook(link_hook.LinkHook):
         # PI setup
         userhook_func = "%s_%s"%(args.link.name, args.link.__class__.__name__)
         if var.pi == userhook_func and var.PIpat is None:
-            #try:
             PI_Data  = args.args[0]
-            PI_Shape = args.args[0].shape
-            from pi_generator import pi_generator
-            print('* Generating Test Pattern for PI', var.pi, PI_Shape,'calling your pi_generator')
-            var.PIpat = pi_generator(PI_Data)
-            #except:
-            #    print('Fatal Error: pi_generator.py is madatory with --pi option')
-            #    sys.exit(-1)
+            PI_Shape = args.args[0].shape   # BCHW
+            if var.enable_user_generator:
+                #try:
+                from pi_generator import pi_generator
+                print('* Generating Test Pattern for PI', var.pi, PI_Shape,'calling your pi_generator')
+                var.PIpat = pi_generator(PI_Data)
+                #except:
+                #    print('Fatal Error: pi_generator.py is madatory with --pi option')
+                #    sys.exit(-1)
+            else:
+                print('* Generating Test Pattern for PI', var.pi, PI_Shape,'calling embedded rnd_generator')
+                X        = var.rnd_generator_option['X']
+                pos_only = var.rnd_generator_option['pos_only']
+                u8b      = var.rnd_generator_option['u8b']
+                onehot   = var.rnd_generator_option['onehot']
+                var.PIpat = GenRndPatFloat32(
+                    PI_Shape[0], img_hw=PI_Shape[-1], img_ch=PI_Shape[1],
+                    X=X, pos_only=pos_only, u8b=u8b, onehot=onehot
+                    #X=255, pos_only=False, u8b=0, onehot=0
+                    #X=var.randmax, pos_only=var.pos_only, u8b=var.upper8bit, onehot=var.onehot
+                ).reshape(PI_Shape) # To BCHW from BHWC of GenRndPatFloat32
             assert type(var.PIpat) is numpy.ndarray, 'Only numpy but {} from pi_generator'.format(type(var.PIpat))
             assert var.PIpat.shape == PI_Shape, 'Missmatch {} vs {}'.format(var.PIpat.shape, PI_Shape)
         self._preprocess()

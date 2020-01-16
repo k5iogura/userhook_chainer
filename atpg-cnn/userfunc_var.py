@@ -19,6 +19,11 @@ def GenFP(net_spec = (28*28, 14*14*32, 7*7*64, 300, 10), bits = 32, sa01 = (1,0)
 class VAR:
     __n = 0
 
+    __enable_user_generator = False
+    __rnd_generator_option  = {
+        'batch':1024, 'img_hw':28, 'img_ch':1,
+        'X':255., 'pos_only':False, 'u8b':0, 'onehot':0
+    }
     __pi = None
     __po = None
     __PIpat = None
@@ -28,6 +33,16 @@ class VAR:
     def n(self):return VAR.__n
     @n.setter
     def n(self,val):VAR.__n=val
+
+    @property
+    def enable_user_generator(self):return VAR.__enable_user_generator
+    @enable_user_generator.setter
+    def enable_user_generator(self,val):VAR.__enable_user_generator=val
+
+    @property
+    def rnd_generator_option(self):return VAR.__rnd_generator_option
+    @rnd_generator_option.setter
+    def rnd_generator_option(self,val):VAR.__rnd_generator_option=val
 
     @property
     def pi(self):return VAR.__pi
