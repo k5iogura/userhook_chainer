@@ -161,10 +161,11 @@ while True:
         np.save(args.tableB,   np.asarray(fault_injection_tableB))
         np.save(args.patternB, np.asarray([ i[-1] for i in fault_injection_tableP ]))
 
-        # << increase batch size for next simulation and reporting >>
         subsum += detects
         RetryNo+= 1
-        if var.batch < args.bmax: var.batch = update_batch( Try=RetryNo, batch=var.batch, bmax=args.bmax, Try2max=10)
+        # << increase batch size for next simulation and reporting >>
+        if args.inputName is None and var.batch < args.bmax:
+            var.batch = update_batch( Try=RetryNo, batch=var.batch, bmax=args.bmax, Try2max=10)
         print('* Detected fault points det/subsum/all/% = {}/{}/{}/{:.4f}%'.format(
             detects, subsum, var.faultN, 100.*subsum/var.faultN))
 
