@@ -37,7 +37,7 @@ def GenRndPatFloat32(batch, img_hw=28, img_ch=1, X=1., u8b=1, onehot=784, pos_on
         randpat.append([np.clip(RxX(X, pos_only, u8b),minf32,maxf32) for i in range(pow(img_hw,2)*img_ch)])
     # Update patterns with OneHot
     for oh in range(onehot):
-        randpat[oh] = [0.0]*pow(img_hw,2)
+        randpat[oh] = [0.0]*pow(img_hw,2) * img_ch
         oneHot      = 1.111111111   # 0b111111100011100011100011100100
         randpat[oh][ randint(0,pow(img_hw,2)*img_ch-1) ] = oneHot
     return np.asarray(randpat, dtype=np.float32).reshape(-1, img_hw, img_hw, img_ch)

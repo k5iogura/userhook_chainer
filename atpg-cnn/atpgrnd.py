@@ -50,6 +50,7 @@ args = args.parse_args()
 
 # add heuristic patterns
 args.batch += args.onehot
+var.batch   = args.batch
 
 print(args)
 # Warn no saving result
@@ -90,7 +91,7 @@ if args.inputName         is not None: var.pi = args.inputName
 # << Generating float32 patterns at random >>
 print('* Generating Test Pattern with batch ',var.batch)
 # Setup spec. of pattern generator infrom userhook.py
-rnd_generator_option = {
+var.rnd_generator_option = {
     'batch':var.batch, 'img_hw':28, 'img_ch':1,
     'X':args.randmax, 'pos_only':args.pos_only, 'u8b':args.upper8bit, 'onehot':args.onehot
 }
