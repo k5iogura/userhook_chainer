@@ -37,7 +37,8 @@ def search_index(np_src, np0):
     except: pass
     return _idx
 
-def yes_or_else():
+def yes_or_else(yes):
+    if yes:return True
     while True:
         choice = input("Please respond with 'yes' or 'no' [y/N]: ").lower()
         if choice in ['y', 'ye', 'yes']: return True
@@ -51,6 +52,7 @@ if __name__=='__main__':
     args.add_argument('-n','--nodeNo',    type=ARG,  default=None)
     args.add_argument('-b','--bitNo',     type=ARG,  default=None)
     args.add_argument('-s','--sa',        type=ARG,  default=None)
+    args.add_argument('-y','--yes',       action='store_true')
     args.add_argument('-v','--verbose',   action='store_true')
 
     group = args.add_mutually_exclusive_group()
@@ -101,7 +103,7 @@ if __name__=='__main__':
             if _idx >= 0 and _idx < faultN:
                 npy0 = npy[_idx]
                 print('delete index',_idx,npy[_idx],'of',args.file,'?')
-                if yes_or_else():
+                if yes_or_else(args.yes):
                     lst1 = npy.tolist()
                     lst1.remove(npy0.tolist())
                     npy  = np.asarray(lst1)
@@ -116,7 +118,7 @@ if __name__=='__main__':
     if updated_npy:
         if os.path.exists(args.file):
             print('Update file', args.file, '?')
-            if yes_or_else():
+            if yes_or_else(args.yes):
                 print('Update file',args.file)   # create new file
                 np.save(args.file, npy) # update existed file
             else: print('Nothing to update!')
