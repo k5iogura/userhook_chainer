@@ -19,6 +19,7 @@ try:
     if var.pi is not None: print('* Link pi_generator into atpg with PI {}'.format(var.pi))
 except: pass
 
+# << Arguments >>
 args = argparse.ArgumentParser()
 args.add_argument('-N','--normal_only',  action='store_true')
 
@@ -31,7 +32,10 @@ grp1 = args.add_mutually_exclusive_group()
 grp1.add_argument('-i','--inputName', type=str,  default=None)
 grp1.add_argument('-pi','--pi_generator',action='store_true')
 
-args.add_argument('-t','--targetFile',type=str,  default=None, help='fault simulation target file')
+grp2 = args.add_mutually_exclusive_group()
+grp2.add_argument('-t','--targetFile',type=str,  default=None, help='fault simulation target file')
+grp2.add_argument('-rp','--reproduct',action='store_false', dest='faultsim_mode')
+
 args.add_argument('-u','--ud_list',   type=str,  default='ud_list')
 args.add_argument('-d','--dt_list',   type=str,  default='dt_list')
 args.add_argument('-sd','--save_dt',  action='store_true', help='saving detect pat and expected pat')
@@ -46,11 +50,22 @@ args.add_argument('--onehot',         type=int,  default=0, help='onehot pattern
 args.add_argument('--retrymax',       type=int,  default=10000)
 args.add_argument('--pos_only',       action='store_true')
 args.add_argument('-r','--randmax',   type=float,default=255.0)
+args.add_argument('-px','--prefix',   type=str,  default='')
+
 args = args.parse_args()
 
 # add heuristic patterns
 args.batch += args.onehot
 var.batch   = args.batch
+
+# << marking files a job up >>
+if args.prefix != '':
+    args.prefix+= '_'
+    args.ud_list = args.prefix + args.ud_list
+    args.dt_list = args.prefix + args.dt_list
+    if args.faultsim_mode:
+        args.tableB   = args.prefix + args.tableB
+        args.patternB = args.prefix + args.patternB
 
 print(args)
 # Warn no saving result
@@ -65,7 +80,13 @@ if args.layerNo is not None:
     net_specList = [0]*len(net_spec)
     for i in layerSet: net_specList[i] = net_spec[i]
     net_spec = tuple(net_specList)
-var.init(Batch=args.batch, Net_spec=net_spec, target=args.targetFile)
+repro_tableB   = None if args.faultsim_mode else args.tableB
+repro_patternB = None if args.faultsim_mode else args.patternB
+var.init(Batch=args.batch, Net_spec=net_spec, target=args.targetFile, repro=repro_tableB)
+if args.targetFile is not None and args.layerNo is not None:
+    print('* Ignored --layerNo option at --targetFile mode')
+if not args.faultsim_mode and args.layerNo is not None:
+    print('* Ignored --layerNo option at --reproduct mode')
 
 # << Calculator fault difference function >>
 # Notice: Can not use xor operator for float32 type
@@ -95,9 +116,17 @@ var.rnd_generator_option = {
     'batch':var.batch, 'img_hw':28, 'img_ch':1,
     'X':args.randmax, 'pos_only':args.pos_only, 'u8b':args.upper8bit, 'onehot':args.onehot
 }
-Test_Patterns = GenRndPatFloat32(   # NHWC
-    var.batch, X=args.randmax, pos_only=args.pos_only, u8b=args.upper8bit, onehot=args.onehot
-)
+if args.faultsim_mode:
+    print('* Generate Test Pattern with GenRndPatFloat32')
+    Test_Patterns = GenRndPatFloat32(   # NHWC
+        var.batch, X=args.randmax, pos_only=args.pos_only, u8b=args.upper8bit, onehot=args.onehot
+    )
+else:
+    Test_Patterns = np.load(args.patternB)
+    print('* Reproduction : Load Test Pattern from', args.patternB,end=' ')
+    print('* Updated Batch size from {} to {} *'.format(var.batch, len(Test_Patterns)))
+    var.batch = len(Test_Patterns)
+
 # Calculate inference result of Before or After of SoftMax
 # Notice!:
 #   B(b)eforeSMax type is chainer.variable.Variable
@@ -107,12 +136,12 @@ var.n = -1  # For normal system inference
 BeforeSMax, AfterSMax = forward.infer(Test_Patterns)
 
 print('* Fault Point insertion and varify')
-fault_injection_table = []
+fault_injection_table  = []
 fault_injection_tableB = []
 fault_injection_tableI = 0
 fault_injection_tableP = []
-subsum = 0
-RetryNo     = 0
+subsum        = 0
+RetryNo       = 0
 patSerrialNos = set()
 while True:
     if args.normal_only:break   # skip fault simulation
@@ -157,10 +186,14 @@ while True:
                     RetryNo, var.n, SerrialNo, detects, spec[1:]))
 
     if detects>0: # Create new random patterns
-        # << write TableB out >>
-        print('* Saving detected fault points, pattern and expected into as tableB', args.tableB, args.patternB)
-        np.save(args.tableB,   np.asarray(fault_injection_tableB))
-        np.save(args.patternB, np.asarray([ i[-1] for i in fault_injection_tableP ]))
+        if args.faultsim_mode:
+            # << write TableB out >>
+            print('* Saving detected fault points, pattern and expected into as tableB', args.tableB, args.patternB)
+            np.save(args.tableB,   np.asarray(fault_injection_tableB))
+            np.save(args.patternB, np.asarray([ i[-1] for i in fault_injection_tableP ]))
+        else:
+            print('* Not Saving detected fault points, pattern and expected at reproduct mode')
+            break
 
         subsum += detects
         RetryNo+= 1
@@ -190,8 +223,14 @@ while True:
         print('* Unique {} Random Patterns to Detect'.format(len(patSerrialNos)))
     else: break
 
+    # << Limitation under retrymax >>
     if RetryNo > args.retrymax:
         print('Stop simulation {}th at over --retrymax {}'.format(RetryNo, args.retrymax))
+        break
+
+    # << Stop simulation at 1 time if reproduction mode >>
+    if not args.faultsim_mode:
+        print('Stop simulation at --reproduct {}'.format((not args.faultsim_mode)))
         break
 
 if var.faultN>0:
