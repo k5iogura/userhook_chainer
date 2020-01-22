@@ -1,3 +1,4 @@
+import os, sys
 import numpy as np
 from pdb import set_trace
 
@@ -18,6 +19,8 @@ def GenFP(net_spec = (28*28, 14*14*32, 7*7*64, 300, 10), bits = 32, sa01 = (1,0)
 
 class VAR:
     __n = 0
+  #  faultpat = None
+  #  faultN   = 1
 
     __enable_user_generator = False
     __rnd_generator_option  = {
@@ -33,6 +36,16 @@ class VAR:
     def n(self):return VAR.__n
     @n.setter
     def n(self,val):VAR.__n=val
+
+    @property
+    def faultN(self):return VAR.faultN
+    @faultN.setter
+    def faultN(self,val):VAR.faultN=val
+
+    @property
+    def faultpat(self):return VAR.faultpat
+    @faultpat.setter
+    def faultpat(self,val):VAR.faultpat=val
 
     @property
     def enable_user_generator(self):return VAR.__enable_user_generator
@@ -64,15 +77,29 @@ class VAR:
     @POpat.setter
     def POpat(self,val):VAR.__POpat=val
 
-    def init(self, Batch=1024, Net_spec=(28*28, 14*14*32, 7*7*64, 300, 10), Bit_spec=32, Sa01=(0,1), target=None):
+    def init(self, Batch=1024, Net_spec=(28*28, 14*14*32, 7*7*64, 300, 10), Bit_spec=32, Sa01=(0,1), target=None, repro=None):
         VAR.batch    = Batch
         VAR.net_spec = Net_spec
         VAR.bit_spec = Bit_spec
         VAR.sa01     = Sa01
+        if repro is not None:
+            B = np.load(repro)
+            faultpat = []
+            for b in B:
+                L = b[0].tolist() if type(b[0]) is np.ndarray else b[0]
+                L.insert(0, False)
+                faultpat.append(L)
+            VAR.faultpat = np.asarray(faultpat)
+            VAR.faultN   = len(VAR.faultpat)
+            print(VAR.faultN,'faults\n',VAR.faultpat)
+            return
+
         if target is None:
             VAR.faultN   = np.sum(VAR.net_spec) * VAR.bit_spec * len(VAR.sa01)
             VAR.faultpat = GenFP(VAR.net_spec, VAR.bit_spec, VAR.sa01)
-        else:
+            return
+
+        if target is not None:
             targetFaults = np.load(target)
             print('Loading Specified Falut List from {} total {} faults'.format(target, len(targetFaults)))
             VAR.faultN   = len(targetFaults)
@@ -81,8 +108,5 @@ class VAR:
             for i in targetFaultsList: i.insert( detect_flag_idx, False )
             VAR.faultpat = np.asarray(targetFaultsList)
             print(VAR.faultpat)
+            return
 
-    def setpat(self, tableB, faultpat):
-        batch, h, w, c = faultpat.shape
-        VAR.batch   = batch
-        VAR.faultN  = tableB.shape[0]
