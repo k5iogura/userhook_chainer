@@ -67,7 +67,7 @@ def conv1_Convolution2D(_in,_out):
                 normal = g.reshape(batch, -1)[ i, node ]
                 v_float, v_uint = bitChange(normal, bit, sa01)
                 g.reshape(batch,-1)[ i, node ] = np.float32(v_float)
-        _in.args[0].data = g
+        #_in.args[0].data = g
         # Get Link Convolution_2D attrigutes
         x, w, b      = _in.args[0], _in.link.__dict__['W'], _in.link.__dict__['b'],
         in_channels  = _in.link.in_channels
@@ -81,7 +81,7 @@ def conv1_Convolution2D(_in,_out):
 
         # Calculate Convolution Layer after fault insertion
         this_conv2d_out = convolution_2d(
-            x, w, b, stride=stride, pad=pad, dilate=dilate, groups=groups
+            g, w, b, stride=stride, pad=pad, dilate=dilate, groups=groups
         )
         this_conv2d_out = this_conv2d_out.reshape(_out.data.shape)
         _out.data = this_conv2d_out.data
@@ -118,7 +118,7 @@ def conv2_Convolution2D(_in,_out):
                 normal = g.reshape(batch, -1)[ i, node ]
                 v_float, v_uint = bitChange(normal, bit, sa01)
                 g.reshape(batch,-1)[ i, node ] = np.float32(v_float)
-        _in.args[0].data = g
+        #_in.args[0].data = g
 
         # Get Link Convolution_2D attrigutes
         x, w, b      = _in.args[0], _in.link.__dict__['W'], _in.link.__dict__['b'],
@@ -133,7 +133,7 @@ def conv2_Convolution2D(_in,_out):
 
         # Calculate Convolution Layer after fault insertion
         this_conv2d_out = convolution_2d(
-            x, w, b, stride=stride, pad=pad, dilate=dilate, groups=groups
+            g, w, b, stride=stride, pad=pad, dilate=dilate, groups=groups
         )
         this_conv2d_out = this_conv2d_out.reshape(_out.data.shape)
         _out.data = this_conv2d_out.data
@@ -168,10 +168,10 @@ def l1_Linear(_in,_out):
                 normal = g.reshape(batch, -1)[ i, node ]
                 v_float, v_uint = bitChange(normal, bit, sa01)
                 g.reshape(batch,-1)[ i, node ] = np.float32(v_float)
-        _in.args[0].data = g
+        #_in.args[0].data = g
         # Calculate Linear Layer after fault insertion
         x, w, b      = _in.args[0], _in.link.__dict__['W'], _in.link.__dict__['b'],
-        this_linear_out = linear(_in.args[0], _in.link.__dict__['W'], _in.link.__dict__['b'])
+        this_linear_out = linear(g, _in.link.__dict__['W'], _in.link.__dict__['b'])
         this_linear_out = this_linear_out.reshape(_out.data.shape)
         _out.data = this_linear_out.data
 
@@ -201,10 +201,10 @@ def l2_Linear(_in,_out):
                 normal = g.reshape(batch, -1)[ i, node ]
                 v_float, v_uint = bitChange(normal, bit, sa01)
                 g.reshape(batch,-1)[ i, node ] = np.float32(v_float)
-        _in.args[0].data = g
+        #_in.args[0].data = g
 
         # Calculate Linear Layer after fault insertion
-        this_linear_out = linear(_in.args[0], _in.link.__dict__['W'], _in.link.__dict__['b'])
+        this_linear_out = linear(g, _in.link.__dict__['W'], _in.link.__dict__['b'])
         this_linear_out = this_linear_out.reshape(_out.data.shape)
         _out.data = this_linear_out.data
 
