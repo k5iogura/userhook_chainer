@@ -83,7 +83,7 @@ class VAR:
         VAR.bit_spec = Bit_spec
         VAR.sa01     = Sa01
         if repro is not None:
-            B = np.load(repro)
+            B = np.load(repro, allow_pickle=True)
             faultpat = []
             for b in B:
                 L = b[0].tolist() if type(b[0]) is np.ndarray else b[0]
@@ -100,7 +100,7 @@ class VAR:
             return
 
         if target is not None:
-            targetFaults = np.load(target)
+            targetFaults = np.load(target, allow_pickle=True)
             print('Loading Specified Falut List from {} total {} faults'.format(target, len(targetFaults)))
             VAR.faultN   = len(targetFaults)
             targetFaultsList = [ i for i in targetFaults.tolist() ]
