@@ -1,3 +1,5 @@
+import warnings
+warnings.simplefilter("ignore")
 from pdb import set_trace
 import os,sys,argparse
 assert sys.version_info.major >= 3, 'Use over python3 version but now in {}'.format(sys.version_info)
@@ -7,7 +9,7 @@ import numpy as np
 import forward
 from   userfunc_var import *
 from   userfunc import __f2i_union
-from   random import seed, random, randint
+from   random import seed, random, randint, choice
 from   rnd_generator import GenRndPatFloat32
 
 # for sharing Class variables
@@ -22,6 +24,7 @@ except: pass
 # << Arguments >>
 args = argparse.ArgumentParser()
 args.add_argument('-N','--normal_only',  action='store_true')
+args.add_argument('-g','--gpu',          type=int,default=-1)
 
 args.add_argument('-l','--layerNo',   type=int,  nargs='+', default=None)
 #args.add_argument('-n','--nodeNo',    type=int,  nargs='+', default=None)
@@ -53,6 +56,19 @@ args.add_argument('-r','--randmax',   type=float,default=255.0)
 args.add_argument('-px','--prefix',   type=str,  default='')
 
 args = args.parse_args()
+
+# For GPU
+if args.gpu >= 0:
+    try:
+        import cupy, chainer
+        device = chainer.get_device(args.gpu)
+        assert '@cupy' in str(device),"Supports Only CPU"
+        print('GPU device is ',device)
+        device.use()
+        forward.model.to_device(device) # load model to GPU
+    except:
+        print('--gpu',args.gpu,'but CuPy not found out or GPU Full, goto CPU mode')
+        args.gpu = -1 # only CPU supported
 
 # add heuristic patterns
 args.batch += args.onehot
@@ -122,10 +138,12 @@ if args.faultsim_mode:
         var.batch, X=args.randmax, pos_only=args.pos_only, u8b=args.upper8bit, onehot=args.onehot
     )
 else:
-    Test_Patterns = np.load(args.patternB)
+    Test_Patterns = np.load(args.patternB, allow_pickle=True)
     print('* Reproduction : Load Test Pattern from', args.patternB,end=' ')
     print('* Updated Batch size from {} to {} *'.format(var.batch, len(Test_Patterns)))
     var.batch = len(Test_Patterns)
+
+if args.gpu >= 0: Test_Patterns = cupy.asarray(Test_Patterns) # load data  to GPU
 
 # Calculate inference result of Before or After of SoftMax
 # Notice!:
@@ -135,6 +153,35 @@ print('* Generating Expected value of normal system')
 var.n = -1  # For normal system inference
 BeforeSMax, AfterSMax = forward.infer(Test_Patterns)
 
+# << Unique TestPattern Selector >>
+# fdiff.shape       : ( batch, output_nodes )
+# det_history.shape : ( batch )
+# pickup : select method such as min, choice
+def uniquetest(fdiff, det_history, pickup=min):
+    assert pickup in [min, choice]
+    assert type(fdiff) == np.ndarray and type(fdiff) == type(det_history) and fdiff.any()
+    if det_history.all():
+        # already all patterns are true in det_history table
+        return ( 0, np.where(fdiff[0])[0][0], det_history )
+    # make diffsmmry table
+    batch, nodes = fdiff.shape
+    diffsmmry = np.asarray( [0] * batch )      # initialize as all False
+    for b in range(batch): diffsmmry[b] = 1 if any(fdiff[b]) else 0
+    # make common detected table
+    cmmn_det = diffsmmry * det_history
+    if cmmn_det.any():
+        # detectable by other patterns
+        cmmn_pat = np.where(cmmn_det)[0][0]
+        return ( np.where(cmmn_det)[0][0], np.where(fdiff[cmmn_pat])[0][0], det_history )
+    # detectable by new pattern
+    new_smmry = ( (diffsmmry ^ det_history) * diffsmmry )
+    detptnNos = np.where(new_smmry==1)[0]
+    new_ptnNo = pickup(detptnNos) if len(detptnNos)>0 else -1
+    new_clmNo = np.where(fdiff[new_ptnNo])[0][0] if new_ptnNo>=0 else -1
+    # update det_history table
+    if new_ptnNo >= 0: det_history[new_ptnNo] = True
+    return ( new_ptnNo, new_clmNo, det_history )
+
 print('* Fault Point insertion and varify')
 fault_injection_table  = []
 fault_injection_tableB = []
@@ -143,6 +190,7 @@ fault_injection_tableP = []
 subsum        = 0
 RetryNo       = 0
 patSerrialNos = set()
+DetHistory    = np.asarray([0]*var.batch)
 while True:
     if args.normal_only:break   # skip fault simulation
     print('* << Try {:06d} >> fault simulation started'.format(RetryNo))
@@ -168,6 +216,8 @@ while True:
             detInfo = np.where(diff)    # <detInfo> dim-0:differencial row / dim-1:differencial column
             detPtNo = detInfo[0][0]
             detColm = detInfo[1][0]
+            new_detPtNo, new_detColm, DetHistory = uniquetest(diff,DetHistory)
+            if new_detPtNo >= 0: detPtNo, detColm = ( new_detPtNo, new_detColm )
             if Test_Patterns[detPtNo][detColm] is np.inf or BeforeSMax.data[detPtNo][detColm] is np.inf:
                 # Discard infinite calculation result
                 print('\***** Warning np.inf FaultSim:{} <-> NormalSim:{}'.format(
@@ -177,15 +227,18 @@ while True:
                 var.faultpat[var.n][detect_flag_idx]=True
                 fault_injection_table.append ([ spec, Test_Patterns[detPtNo], BeforeSMax.data[detPtNo] ])
                 SerrialNo = detPtNo + RetryNo * var.batch
+                new_flg = '*' if not SerrialNo in patSerrialNos else ' '
                 if not SerrialNo in patSerrialNos:
                     fault_injection_tableP.append( [ SerrialNo, Test_Patterns[detPtNo] ] )
                 fault_injection_tableI = [ i for i,p in enumerate(fault_injection_tableP) if p[0] == SerrialNo ][0]
                 fault_injection_tableB.append([ spec[layer_idx:], fault_injection_tableI, BeforeSMax.data[detPtNo] ])
                 patSerrialNos.add(SerrialNo)
-                print('> detect try={:3d} faultNo={:6d} detPtNo={:6d} detects={:6d} spec={}'.format(
-                    RetryNo, var.n, SerrialNo, detects, spec[1:]))
+                print('> detect try={:3d} faultNo={:6d} detPtNo={:6d}{} detects={:6d} spec={}'.format(
+                    RetryNo, var.n, SerrialNo, new_flg, detects, spec[1:]))
 
     if detects>0: # Create new random patterns
+        subsum += detects
+        RetryNo+= 1
         if args.faultsim_mode:
             # << write TableB out >>
             print('* Saving detected fault points, pattern and expected into as tableB', args.tableB, args.patternB)
@@ -195,11 +248,10 @@ while True:
             print('* Not Saving detected fault points, pattern and expected at reproduct mode')
             break
 
-        subsum += detects
-        RetryNo+= 1
         # << increase batch size for next simulation and reporting >>
         if args.inputName is None and var.batch < args.bmax:
             var.batch = update_batch( Try=RetryNo, batch=var.batch, bmax=args.bmax, Try2max=10)
+            DetHistory= np.asarray([0]*var.batch)   # renew for new batch size
         print('* Detected fault points det/subsum/all/% = {}/{}/{}/{:.4f}%'.format(
             detects, subsum, var.faultN, 100.*subsum/var.faultN))
 
@@ -212,15 +264,17 @@ while True:
         if len(ud_table) == 0: print('* undetected fault points is Zero! ** Congratulations **')
         np.save(args.ud_list, ud_table)
 
-        # << creating new additional tenst patterns and re-run normal system >>
+        print('* Unique {} Random Patterns to Detect'.format(len(patSerrialNos)))
+
+        # << creating new additional test patterns and re-run normal system >>
         print('* Creating New {} Test pattern'.format(var.batch))
         Test_Patterns = GenRndPatFloat32(
             var.batch, X=args.randmax, pos_only=args.pos_only, u8b=args.upper8bit, onehot=args.onehot
         )
+        if args.gpu >= 0: Test_Patterns = cupy.asarray(Test_Patterns) # load data  to GPU
         print('* Generating Expected value of normal system')
         var.n = -1  # For normal system inference
         BeforeSMax, AfterSMax = forward.infer(Test_Patterns)
-        print('* Unique {} Random Patterns to Detect'.format(len(patSerrialNos)))
     else: break
 
     # << Limitation under retrymax >>
