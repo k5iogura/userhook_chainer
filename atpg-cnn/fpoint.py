@@ -82,6 +82,7 @@ if __name__=='__main__':
     if os.path.exists(args.file):               # loading exist npy file
         print('Loading',args.file)
         npy = np.load(args.file)
+        assert len(npy)>0, 'No undetects in {}, maybe 100% detects'.format(args.file)
         assert len(npy.shape)==2, 'Unsupported file format {}'.format(npy.shape)
         faultN, items = npy.shape
 
