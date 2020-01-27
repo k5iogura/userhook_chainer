@@ -48,7 +48,6 @@ def check_accuracy(model, xs, ts):
     cors = (ys == ts)
     num_cors = sum(cors)
     accuracy = num_cors / ts.shape[0]
-    set_trace()
     return accuracy, loss
 
 def main():
