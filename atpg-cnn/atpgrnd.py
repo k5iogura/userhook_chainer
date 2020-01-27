@@ -162,7 +162,8 @@ def uniquetest(fdiff, det_history, pickup=min):
     assert type(fdiff) == np.ndarray and type(fdiff) == type(det_history) and fdiff.any()
     if det_history.all():
         # already all patterns are true in det_history table
-        return ( 0, np.where(fdiff[0])[0][0], det_history )
+        return ( 0, 0, det_history )
+    #    return ( 0, np.where(fdiff[0])[0][0], det_history )    # Debugging now
     # make diffsmmry table
     batch, nodes = fdiff.shape
     diffsmmry = np.asarray( [0] * batch )      # initialize as all False
