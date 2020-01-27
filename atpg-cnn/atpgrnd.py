@@ -214,11 +214,12 @@ while True:
         # Choice test pattern to detect fault point
         if diff.any():  # case detected
                                         # <diff>    dim-0:pattern          / dim01:fault point
-            detInfo = np.where(diff)    # <detInfo> dim-0:differencial row / dim-1:differencial column
-            detPtNo = detInfo[0][0]
-            detColm = detInfo[1][0]
-            new_detPtNo, new_detColm, DetHistory = uniquetest(diff,DetHistory)
-            if new_detPtNo >= 0: detPtNo, detColm = ( new_detPtNo, new_detColm )
+##             detInfo = np.where(diff)    # <detInfo> dim-0:differencial row / dim-1:differencial column
+##             detPtNo = detInfo[0][0]
+##             detColm = detInfo[1][0]
+##             new_detPtNo, new_detColm, DetHistory = uniquetest(diff,DetHistory)
+            detPtNo, detColm, DetHistory = uniquetest(diff,DetHistory)
+##             if new_detPtNo >= 0: detPtNo, detColm = ( new_detPtNo, new_detColm )
             if Test_Patterns[detPtNo][detColm] is np.inf or BeforeSMax.data[detPtNo][detColm] is np.inf:
                 # Discard infinite calculation result
                 print('\***** Warning np.inf FaultSim:{} <-> NormalSim:{}'.format(
