@@ -20,12 +20,12 @@ var = VAR()
 class timestamp:
     def __init__(self, msg):
         self.start = dt.now()
-        print('### ', msg, '{} ###'.format(self.start))
+        print('*', msg, '{} #'.format(self.start))
     def ts(self,obj):
         return '{}/{}/{}:{}:{}:{}'.format(obj.year,obj.month,obj.day,obj.hour,obj.minute,obj.second)
     def click(self, msg=''):
         now = dt.now()
-        print('### ',msg,'{} - {} = {} ###'.format(self.ts(now), self.ts(self.start), now - self.start))
+        print('*',msg,'{} - {} = {} #'.format(self.ts(now), self.ts(self.start), now - self.start))
         return now
 
 # PI setup
