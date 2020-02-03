@@ -2,6 +2,7 @@ import warnings
 warnings.simplefilter("ignore")
 from pdb import set_trace
 import os,sys,argparse
+from datetime import datetime as dt
 assert sys.version_info.major >= 3, 'Use over python3 version but now in {}'.format(sys.version_info)
 
 import numpy as np
@@ -14,6 +15,18 @@ from   rnd_generator import GenRndPatFloat32
 
 # for sharing Class variables
 var = VAR()
+
+# time stamp utility
+class timestamp:
+    def __init__(self, msg):
+        self.start = dt.now()
+        print('### ', msg, '{} ###'.format(self.start))
+    def ts(self,obj):
+        return '{}/{}/{}:{}:{}:{}'.format(obj.year,obj.month,obj.day,obj.hour,obj.minute,obj.second)
+    def click(self, msg=''):
+        now = dt.now()
+        print('### ',msg,'{} - {} = {} ###'.format(self.ts(now), self.ts(self.start), now - self.start))
+        return now
 
 # PI setup
 try:
@@ -192,6 +205,7 @@ subsum        = 0
 RetryNo       = 0
 patSerrialNos = set()
 DetHistory    = np.asarray([0]*var.batch)
+Tstamp = timestamp('start')
 while True:
     if args.normal_only:break   # skip fault simulation
     print('* << Try {:06d} >> fault simulation started'.format(RetryNo))
@@ -238,6 +252,7 @@ while True:
                 print('> detect try={:3d} faultNo={:6d} detPtNo={:6d}{} detects={:6d} spec={}'.format(
                     RetryNo, var.n, SerrialNo, new_flg, detects, spec[1:]))
 
+    Tstamp.click('Until Retry {} elapsed time'.format(RetryNo))
     if detects>0: # Create new random patterns
         subsum += detects
         RetryNo+= 1
@@ -293,5 +308,6 @@ if var.faultN>0:
     print('* Summary for Detected fault points det/all/%={}/{}/{:.3f}%'.format(
         subsum,var.faultN,100.*subsum/var.faultN)
     )
+Tstamp.click('Faultsim elaplsed time')
 print('* End of Flow')
 
