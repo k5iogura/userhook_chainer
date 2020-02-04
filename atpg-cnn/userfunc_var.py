@@ -101,7 +101,7 @@ class VAR:
                 L.insert(spec_idx, False)
                 faultpat.append(L)
                 P = item[pat_idx]
-                P = list(P)    if type(P) is int        else P
+                P = [P]    if type(P) is int        else P
                 P = P.tolist() if type(P) is np.ndarray else P
                 VAR.__detpatterns.append(P)
             VAR.faultpat = np.asarray(faultpat)
