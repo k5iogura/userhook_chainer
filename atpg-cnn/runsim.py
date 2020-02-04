@@ -17,10 +17,11 @@ var = VAR()
 
 # << Arguments >>
 args = argparse.ArgumentParser()
-args.add_argument('-g','--gpu',          type=int,default=-1)
+args.add_argument('-g','--gpu',       type=int,default=-1)
 args.add_argument('-tB','--tableB',   type=str,  default='dt_tableB.npy')
 args.add_argument('-pB','--patternB', type=str,  default='dt_patternB.npy')
 args.add_argument('--seed',           type=int,  default=2222222222)
+args.add_argument('-v','--verbose',   action='store_true')
 args = args.parse_args()
 
 # Check files
@@ -116,6 +117,7 @@ for var.n, spec in enumerate(var.faultpat):
     diff  = ~diffB  # True : propagated fault / False : disappearance fault
                     # diff.shape : ( batch, output_nodes )
 
+    detPtInfo = np.where(diff)[0]
     # Choice test pattern to detect fault point
     if diff.any():  # case detected
                                     # <diff>    dim-0:pattern          / dim01:fault point
@@ -125,10 +127,17 @@ for var.n, spec in enumerate(var.faultpat):
         SerrialNo = detPtNo
         new_flg = '*' if not SerrialNo in patSerrialNos else ' '
         patSerrialNos.add(SerrialNo)
-        print('> detect faultNo={:6d} detPtNo={:6d}{} detects={:6d} spec={}'.format(
-            var.n, SerrialNo, new_flg, detects, spec[layer_idx:]))
-        assert SerrialNo in var.detpatterns[var.n],'pattern-{} not found in expected patterns {}'.format(
-            SerrialNo, var.detpatterns[var.n])
+        expected_patterns = var.detpatterns[var.n] if args.verbose else ''
+        if len(var.detpatterns[var.n])>1:    # tableX assertion without tableB
+            print('> detect faultNo={:6d} detPtNo={:6d}{} detects={:6d} spec={} {}'.format(
+                var.n, SerrialNo, new_flg, detects, spec[layer_idx:], expected_patterns))
+            assert SerrialNo in var.detpatterns[var.n],'pattern-{} not found in expected patterns {}'.format(
+                SerrialNo, var.detpatterns[var.n])
+        else:
+            assert var.detpatterns[var.n][0] in detPtInfo,'pattern-{} not found in expected patterns {}'.format(
+                var.detpatterns[var.n][0], detPtInfo)
+            print('> detect faultNo={:6d} detPtNo={:6d}{} detects={:6d} spec={} {}'.format(
+                var.n, SerrialNo, new_flg, detects, spec[layer_idx:], detPtInfo))
 
 if var.faultN>0:
     print('* Summary for Detected fault points det/all/%={}/{}/{:.3f}%'.format(
