@@ -118,6 +118,12 @@ if not args.faultsim_mode and args.layerNo is not None:
 #
 def faultDiff(A,B):
     assert len(A.reshape(-1))==len(B.reshape(-1)),'Mismatch length btn A and B'
+    # To avoid miss judgement about numpy.nan
+    for idx,(I,J) in enumerate(zip(A.reshape(-1),B.reshape(-1))):
+        if   np.isnan(I) and np.isnan(J): A.reshape(-1)[idx] = B.reshape(-1)[idx] = 0.0
+        elif np.isnan(I) : A.reshape(-1)[idx] = J
+        elif np.isnan(J) : B.reshape(-1)[idx] = I
+    # Create differences table
     diff = [ __f2i_union(I).uint==__f2i_union(J).uint for I,J in zip(A.reshape(-1),B.reshape(-1)) ]
     return np.asarray(diff).reshape(A.shape)
 
