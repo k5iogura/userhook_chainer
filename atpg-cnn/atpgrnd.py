@@ -12,7 +12,7 @@ from   userfunc_var import *
 from   userfunc import __f2i_union
 from   random import seed, random, randint, choice
 from   rnd_generator import GenRndPatFloat32
-from   utils import PatNames, timestamp
+from   utils import PatNames, timestamp, printargs
 
 # for sharing Class variables
 var = VAR()
@@ -91,7 +91,7 @@ if args.prefix != '':
         args.tableX   = args.prefix + args.tableX
         args.patternX = args.prefix + args.patternX
 
-print(args)
+printargs(args)
 # Warn no saving result
 if args.save_dt is False: print('* No saving detect pattern table')
 if args.skip_tX is True : print('* No saving detect pattern tableX')
@@ -267,6 +267,7 @@ while True:
 
     Tstamp.click('Until Retry {} elapsed time'.format(RetryNo))
     if detects>0: # Create new random patterns
+        printargs(args)
 
         # << update tablePX and write TableX out >>
         if args.faultsim_mode:
@@ -336,6 +337,7 @@ if var.faultN>0:
     print('* Summary for Detected fault points det/all/%={}/{}/{:.3f}%'.format(
         subsum,var.faultN,100.*subsum/var.faultN)
     )
+printargs(args)
 Tstamp.click('Faultsim elaplsed time')
 print('* End of Flow')
 
