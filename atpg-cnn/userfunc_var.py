@@ -32,6 +32,8 @@ class VAR:
     __PIpat = None
     __POpat = None
 
+    __detpatterns = []
+
     @property
     def n(self):return VAR.__n
     @n.setter
@@ -77,18 +79,31 @@ class VAR:
     @POpat.setter
     def POpat(self,val):VAR.__POpat=val
 
+    @property
+    def detpatterns(self):return VAR.__detpatterns
+
     def init(self, Batch=1024, Net_spec=(28*28, 14*14*32, 7*7*64, 300, 10), Bit_spec=32, Sa01=(0,1), target=None, repro=None):
+        # VAR.faultpat: [0]detect_flag [1]layer [2]node [3]bit [4]sa01
         VAR.batch    = Batch
         VAR.net_spec = Net_spec
         VAR.bit_spec = Bit_spec
         VAR.sa01     = Sa01
         if repro is not None:
-            B = np.load(repro, allow_pickle=True)
+            # << B format >>
+            # tableB : [ [ spec,  patternNo,  expectedValue ], ... ]
+            # item   :   [ spec,  patternNo,  expectedValue ]
+            # spec   :   [ layerNo, nodeNo, bits, sa01 ]
+            tableB   = np.load(repro, allow_pickle=True)
             faultpat = []
-            for b in B:
-                L = b[0].tolist() if type(b[0]) is np.ndarray else b[0]
-                L.insert(0, False)
+            spec_idx, pat_idx = 0, 1
+            for item in tableB:
+                L = item[spec_idx].tolist() if type(item[spec_idx]) is np.ndarray else item[spec_idx]
+                L.insert(spec_idx, False)
                 faultpat.append(L)
+                P = item[pat_idx]
+                P = list(P)    if type(P) is int        else P
+                P = P.tolist() if type(P) is np.ndarray else P
+                VAR.__detpatterns.append(P)
             VAR.faultpat = np.asarray(faultpat)
             VAR.faultN   = len(VAR.faultpat)
             print(VAR.faultN,'faults\n',VAR.faultpat)
@@ -100,6 +115,9 @@ class VAR:
             return
 
         if target is not None:
+            # << ud_list.npy format >>
+            # targetFaults : [ spec, ... ]
+            # spec         : [ layerNo, nodeNo, bits, sa01 ]
             targetFaults = np.load(target, allow_pickle=True)
             print('Loading Specified Falut List from {} total {} faults'.format(target, len(targetFaults)))
             VAR.faultN   = len(targetFaults)

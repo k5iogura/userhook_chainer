@@ -2,7 +2,7 @@ import warnings
 warnings.simplefilter("ignore")
 from pdb import set_trace
 import os,sys,argparse
-from datetime import datetime as dt
+from copy import copy
 assert sys.version_info.major >= 3, 'Use over python3 version but now in {}'.format(sys.version_info)
 
 import numpy as np
@@ -12,21 +12,10 @@ from   userfunc_var import *
 from   userfunc import __f2i_union
 from   random import seed, random, randint, choice
 from   rnd_generator import GenRndPatFloat32
+from   utils import PatNames, timestamp
 
 # for sharing Class variables
 var = VAR()
-
-# time stamp utility
-class timestamp:
-    def __init__(self, msg):
-        self.start = dt.now()
-        print('*', msg, '{} #'.format(self.start))
-    def ts(self,obj):
-        return '{}/{}/{}:{}:{}:{}'.format(obj.year,obj.month,obj.day,obj.hour,obj.minute,obj.second)
-    def click(self, msg=''):
-        now = dt.now()
-        print('*',msg,'{} - {} = {} #'.format(self.ts(now), self.ts(self.start), now - self.start))
-        return now
 
 # PI setup
 try:
@@ -57,9 +46,13 @@ args.add_argument('-d','--dt_list',   type=str,  default='dt_list')
 args.add_argument('-sd','--save_dt',  action='store_true', help='saving detect pat and expected pat')
 args.add_argument('-tB','--tableB',   type=str,  default='dt_tableB.npy')
 args.add_argument('-pB','--patternB', type=str,  default='dt_patternB.npy')
+args.add_argument('-sX','--skip_tX',  action='store_true')
+args.add_argument('-tX','--tableX',   type=str,  default='dt_tableX.npy')
+args.add_argument('-pX','--patternX', type=str,  default='dt_patternX.npy')
 
 args.add_argument('--batch',          type=int,  default=1024)
 args.add_argument('--bmax',           type=int,  default=1024*4)
+args.add_argument('--bmax2',          type=int,  default=10)
 args.add_argument('--seed',           type=int,  default=2222222222)
 args.add_argument('--upper8bit',      type=int,  default=0, help='specify as %')
 args.add_argument('--onehot',         type=int,  default=0, help='onehot patterns')
@@ -95,10 +88,13 @@ if args.prefix != '':
     if args.faultsim_mode:
         args.tableB   = args.prefix + args.tableB
         args.patternB = args.prefix + args.patternB
+        args.tableX   = args.prefix + args.tableX
+        args.patternX = args.prefix + args.patternX
 
 print(args)
 # Warn no saving result
 if args.save_dt is False: print('* No saving detect pattern table')
+if args.skip_tX is True : print('* No saving detect pattern tableX')
 
 # << Generate fault list >>
 seed(args.seed)
@@ -127,7 +123,7 @@ def faultDiff(A,B):
 
 # << increase batch >>
 # max : bmax min : batch
-def update_batch(Try, batch, bmax, Try2max=10):
+def update_batch(Try, batch, bmax, Try2max=args.bmax2):
     alpha = (bmax-batch)/Try2max
     x = int(batch + alpha * Try)
     x = x if x <= bmax else bmax
@@ -176,7 +172,6 @@ def uniquetest(fdiff, det_history, pickup=min):
     if det_history.all():
         # already all patterns are true in det_history table
         return ( 0, 0, det_history )
-    #    return ( 0, np.where(fdiff[0])[0][0], det_history )    # Debugging now
     # make diffsmmry table
     batch, nodes = fdiff.shape
     diffsmmry = np.asarray( [0] * batch )      # initialize as all False
@@ -201,15 +196,21 @@ fault_injection_table  = []
 fault_injection_tableB = []
 fault_injection_tableI = 0
 fault_injection_tableP = []
+fault_injection_tableX = []
+fault_injection_tablePX= []
+patNames = PatNames(var.batch)
+
 subsum        = 0
 RetryNo       = 0
 patSerrialNos = set()
 DetHistory    = np.asarray([0]*var.batch)
+
 Tstamp = timestamp('start')
 while True:
     if args.normal_only:break   # skip fault simulation
     print('* << Try {:06d} >> fault simulation started'.format(RetryNo))
     detects = 0
+    fault_injection_tableXS= set()
     for var.n, spec in enumerate(var.faultpat):
 
         # spec: [0]detect_flag [1]layer [2]node [3]bit [4]sa01
@@ -227,13 +228,19 @@ while True:
 
         # Choice test pattern to detect fault point
         if diff.any():  # case detected
-                                        # <diff>    dim-0:pattern          / dim01:fault point
-##             detInfo = np.where(diff)    # <detInfo> dim-0:differencial row / dim-1:differencial column
-##             detPtNo = detInfo[0][0]
-##             detColm = detInfo[1][0]
-##             new_detPtNo, new_detColm, DetHistory = uniquetest(diff,DetHistory)
+
+            # prepare tableX
+            # <diff>    dim-0:pattern No        / dim01:detect Location
+            # tableX [ [[spec],[index pat]], ... ]
+            xDetInfo = np.where(diff)
+            xDetPtNo = xDetInfo[0]
+            xDetPtNoSet = set()
+            for i in xDetPtNo: xDetPtNoSet.add(i)           # Unique sort by set class
+            xDetPtNo = np.asarray(list(xDetPtNoSet))
+            xDetPtSn = xDetPtNo + patNames.offset           # To serrial No.
+            fault_injection_tableX.append([ spec[layer_idx:], [patNames.index2name(i) for i in xDetPtSn] ])
+
             detPtNo, detColm, DetHistory = uniquetest(diff,DetHistory)
-##             if new_detPtNo >= 0: detPtNo, detColm = ( new_detPtNo, new_detColm )
             if Test_Patterns[detPtNo][detColm] is np.inf or BeforeSMax.data[detPtNo][detColm] is np.inf:
                 # Discard infinite calculation result
                 print('\***** Warning np.inf FaultSim:{} <-> NormalSim:{}'.format(
@@ -254,6 +261,20 @@ while True:
 
     Tstamp.click('Until Retry {} elapsed time'.format(RetryNo))
     if detects>0: # Create new random patterns
+
+        # << update tablePX and write TableX out >>
+        if args.faultsim_mode:
+            extendN = patNames.count - len(fault_injection_tablePX)
+            fault_injection_tablePX.extend( [None] * extendN )
+            for ptn_idx, ptn_name in patNames:
+                if ptn_idx < patNames.offset: continue
+                ptnIndexLocal = ptn_idx - patNames.offset
+                fault_injection_tablePX[ptn_name] = copy( Test_Patterns[ ptnIndexLocal ] )
+            print('* Saving detected fault points, pattern and expected into as tableX', args.tableX, args.patternX)
+            print('* tableX size={} patternX size={}'.format(len(fault_injection_tableX), len(fault_injection_tablePX)))
+            np.save(args.tableX,   np.asarray( fault_injection_tableX ))
+            np.save(args.patternX, np.asarray( [ i for i in fault_injection_tablePX ] ))
+
         subsum += detects
         RetryNo+= 1
         if args.faultsim_mode:
@@ -267,8 +288,9 @@ while True:
 
         # << increase batch size for next simulation and reporting >>
         if args.inputName is None and var.batch < args.bmax:
-            var.batch = update_batch( Try=RetryNo, batch=var.batch, bmax=args.bmax, Try2max=10)
+            var.batch = update_batch( Try=RetryNo, batch=var.batch, bmax=args.bmax, Try2max=args.bmax2)
             DetHistory= np.asarray([0]*var.batch)   # renew for new batch size
+            patNames.extend( var.batch )
         print('* Detected fault points det/subsum/all/% = {}/{}/{}/{:.4f}%'.format(
             detects, subsum, var.faultN, 100.*subsum/var.faultN))
 

@@ -10,6 +10,7 @@ import forward
 from   userfunc_var import *
 from   userfunc import __f2i_union
 from   random import seed, choice
+from   utils import PatNames, timestamp
 
 # for sharing Class variables
 var = VAR()
@@ -97,13 +98,10 @@ def uniquetest(fdiff, det_history, pickup=min):
     return ( new_ptnNo, new_clmNo, det_history )
 
 print('* Fault Point insertion and varify')
-fault_injection_table  = []
-fault_injection_tableB = []
-fault_injection_tableI = 0
-fault_injection_tableP = []
 patSerrialNos = set()
 DetHistory    = np.asarray([0]*var.batch)
 detects = 0
+Tstamp = timestamp('start')
 for var.n, spec in enumerate(var.faultpat):
 
     # spec: [0]detect_flag [1]layer [2]node [3]bit [4]sa01
@@ -114,7 +112,6 @@ for var.n, spec in enumerate(var.faultpat):
     beforeSMax, afterSMax = forward.infer(Test_Patterns)
 
     # Calculate fault differencial function
-    diffA = faultDiff(AfterSMax,  afterSMax)
     diffB = faultDiff(BeforeSMax.data, beforeSMax.data)
     diff  = ~diffB  # True : propagated fault / False : disappearance fault
                     # diff.shape : ( batch, output_nodes )
@@ -125,20 +122,18 @@ for var.n, spec in enumerate(var.faultpat):
         detPtNo, detColm, DetHistory = uniquetest(diff,DetHistory)
         detects += 1
         var.faultpat[var.n][detect_flag_idx]=True
-        fault_injection_table.append ([ spec, Test_Patterns[detPtNo], BeforeSMax.data[detPtNo] ])
         SerrialNo = detPtNo
         new_flg = '*' if not SerrialNo in patSerrialNos else ' '
-        if not SerrialNo in patSerrialNos:
-            fault_injection_tableP.append( [ SerrialNo, Test_Patterns[detPtNo] ] )
-        fault_injection_tableI = [ i for i,p in enumerate(fault_injection_tableP) if p[0] == SerrialNo ][0]
-        fault_injection_tableB.append([ spec[layer_idx:], fault_injection_tableI, BeforeSMax.data[detPtNo] ])
         patSerrialNos.add(SerrialNo)
         print('> detect faultNo={:6d} detPtNo={:6d}{} detects={:6d} spec={}'.format(
-            var.n, SerrialNo, new_flg, detects, spec[1:]))
+            var.n, SerrialNo, new_flg, detects, spec[layer_idx:]))
+        assert SerrialNo in var.detpatterns[var.n],'pattern-{} not found in expected patterns {}'.format(
+            SerrialNo, var.detpatterns[var.n])
 
 if var.faultN>0:
     print('* Summary for Detected fault points det/all/%={}/{}/{:.3f}%'.format(
         detects,var.faultN,100.*detects/var.faultN)
     )
+Tstamp.click('Faultsim elaplsed time')
 print('* End of Flow')
 
