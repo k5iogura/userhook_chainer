@@ -108,6 +108,7 @@ def faultDiff(A,B):
        #         print('{} A {} => B {}'.format(idx,viewA[idx],viewB[idx]))
        #         viewB[idx] = I
     # Create differences table
+    assert not np.isnan(viewA).any() and not np.isnan(viewB).any()
     diff = [ __f2i_union(I).uint==__f2i_union(J).uint for I,J in zip(viewA,viewB) ]
     return np.asarray(diff).reshape(A.shape), data_correction
 #    assert len(A.reshape(-1))==len(B.reshape(-1)),'Mismatch length btn A and B'
