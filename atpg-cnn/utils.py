@@ -4,13 +4,13 @@ from re import match
 
 # print arguments about user options
 def printargs(args):
-    print('#OPTIONs####################')
+    print('* OPTIONs')
     for n, option in enumerate([i[0] for i in getmembers(args) if not match('_',i[0])]):
         com = 'args.{}'.format(option)
         arg_value=eval(com)
-        print(' {} == {},'.format(option, arg_value),end='')
+        print('  {} == {},'.format(option, arg_value),end='')
         if (n+1)%3 == 0:print('')
-    print('\n############################')
+    print('\n')
 
 # time stamp utility
 class timestamp:

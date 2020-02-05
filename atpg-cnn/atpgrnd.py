@@ -26,6 +26,7 @@ except: pass
 # << Arguments >>
 args = argparse.ArgumentParser()
 args.add_argument('-N','--normal_only',  action='store_true')
+args.add_argument('-D','--debug',        action='store_true')
 args.add_argument('-g','--gpu',          type=int,default=-1)
 
 args.add_argument('-l','--layerNo',   type=int,  nargs='+', default=None)
@@ -118,16 +119,19 @@ if not args.faultsim_mode and args.layerNo is not None:
 #
 def faultDiff(A,B):
     assert len(A.reshape(-1))==len(B.reshape(-1)),'Mismatch length btn A and B'
-    # To avoid miss judgement about numpy.nan
+    data_correction = False
     viewA = A.reshape(-1)
-    viewB = A.reshape(-1)
-    for idx,(I,J) in enumerate(zip(viewA,viewB)):
-        if   np.isnan(I) and np.isnan(J): viewA[idx] = viewB[idx] = 0.0
-        elif np.isnan(I) : viewA[idx] = J
-        elif np.isnan(J) : viewB[idx] = I
+    viewB = B.reshape(-1)
+    # To avoid miss judgement about numpy.nan
+    if np.isnan(viewA).any() or np.isnan(viewB).any():
+        data_correction = True
+        for idx,(I,J) in enumerate(zip(viewA,viewB)):
+            if   np.isnan(I) and np.isnan(J): viewA[idx] = viewB[idx] = 0.0
+            elif np.isnan(I) : viewA[idx] = J
+            elif np.isnan(J) : viewB[idx] = I
     # Create differences table
-    diff = [ __f2i_union(I).uint==__f2i_union(J).uint for I,J in zip(A.reshape(-1),B.reshape(-1)) ]
-    return np.asarray(diff).reshape(A.shape)
+    diff = [ __f2i_union(I).uint==__f2i_union(J).uint for I,J in zip(viewA,viewB) ]
+    return np.asarray(diff).reshape(A.shape), data_correction
 
 # << increase batch >>
 # max : bmax min : batch
@@ -212,6 +216,7 @@ subsum        = 0
 RetryNo       = 0
 patSerrialNos = set()
 DetHistory    = np.asarray([0]*var.batch)
+overflows     = 0
 
 Tstamp = timestamp('start')
 while True:
@@ -229,10 +234,14 @@ while True:
         beforeSMax, afterSMax = forward.infer(Test_Patterns)
 
         # Calculate fault differencial function
-        diffA = faultDiff(AfterSMax,  afterSMax)
-        diffB = faultDiff(BeforeSMax.data, beforeSMax.data)
+##      diffA, data_correctionA = faultDiff(AfterSMax,  afterSMax)
+        diffB, data_correctionB = faultDiff(BeforeSMax.data, beforeSMax.data)
         diff  = ~diffB  # True : propagated fault / False : disappearance fault
                         # diff.shape : ( batch, output_nodes )
+        ovflag= ''
+        if args.debug and data_correctionB:
+            overflows += 1
+            ovflag= 'OVF-{:06d}'.format(overflows)
 
         # Choice test pattern to detect fault point
         if diff.any():  # case detected
@@ -264,8 +273,8 @@ while True:
                 fault_injection_tableI = [ i for i,p in enumerate(fault_injection_tableP) if p[0] == SerrialNo ][0]
                 fault_injection_tableB.append([ spec[layer_idx:], fault_injection_tableI, BeforeSMax.data[detPtNo] ])
                 patSerrialNos.add(SerrialNo)
-                print('> detect try={:3d} faultNo={:6d} detPtNo={:6d}{} detects={:6d} spec={}'.format(
-                    RetryNo, var.n, SerrialNo, new_flg, detects, spec[1:]))
+                print('> detect try={:3d} faultNo={:6d} detPtNo={:6d}{} detects={:6d} spec={} {}'.format(
+                    RetryNo, var.n, SerrialNo, new_flg, detects, spec[1:], ovflag))
 
     Tstamp.click('Until Retry {} elapsed time'.format(RetryNo))
     if detects>0: # Create new random patterns
