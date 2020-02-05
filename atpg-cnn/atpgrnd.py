@@ -120,15 +120,25 @@ if not args.faultsim_mode and args.layerNo is not None:
 def faultDiff(A,B):
     assert len(A.reshape(-1))==len(B.reshape(-1)),'Mismatch length btn A and B'
     data_correction = False
-    viewA = A.reshape(-1)
+    viewA = A.reshape(-1).copy()
     viewB = B.reshape(-1)
     # To avoid miss judgement about numpy.nan
     if np.isnan(viewA).any() or np.isnan(viewB).any():
         data_correction = True
         for idx,(I,J) in enumerate(zip(viewA,viewB)):
-            if   np.isnan(I) and np.isnan(J): viewA[idx] = viewB[idx] = 0.0
-            elif np.isnan(I) : viewA[idx] = J
-            elif np.isnan(J) : viewB[idx] = I
+            if np.isnan(I+J):       # operation with np.nan become np.nan
+                viewA[idx] = viewB[idx] = 0.0
+       # << If allow detect by nan and float then use below code, >>
+       # for idx,(I,J) in enumerate(zip(viewA,viewB)):
+       #     if   np.isnan(I) and np.isnan(J):
+       #         print('{} A {} => B {}'.format(idx,viewA[idx],viewB[idx]))
+       #         viewA[idx] = viewB[idx] = 0.0
+       #     elif np.isnan(I) :
+       #         print('{} A {} => B {}'.format(idx,viewA[idx],viewB[idx]))
+       #         viewA[idx] = J
+       #     elif np.isnan(J) :
+       #         print('{} A {} => B {}'.format(idx,viewA[idx],viewB[idx]))
+       #         viewB[idx] = I
     # Create differences table
     diff = [ __f2i_union(I).uint==__f2i_union(J).uint for I,J in zip(viewA,viewB) ]
     return np.asarray(diff).reshape(A.shape), data_correction
