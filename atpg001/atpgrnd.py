@@ -1,3 +1,5 @@
+import warnings
+warnings.simplefilter("ignore")
 from pdb import set_trace
 import os,sys,argparse
 assert sys.version_info.major >= 3, 'Use over python3 version but now in {}'.format(sys.version_info)
@@ -13,6 +15,7 @@ var = VAR()
 
 args = argparse.ArgumentParser()
 args.add_argument('-l','--layerNo',   type=int,  default=None)
+args.add_argument('-D','--debug',     action='store_true')
 
 args.add_argument('-L','--layerList', type=int,  nargs='+')
 args.add_argument('-n','--nodeNo',    type=int,  default=None)
@@ -84,8 +87,32 @@ def GenRndPatFloat32(batch, img_hw=28, img_ch=1, X=1., u8b=1, onehot=784, pos_on
 #
 def faultDiff(A,B):
     assert len(A.reshape(-1))==len(B.reshape(-1)),'Mismatch length btn A and B'
-    diff = [ __f2i_union(I).uint==__f2i_union(J).uint for I,J in zip(A.reshape(-1),B.reshape(-1)) ]
-    return np.asarray(diff).reshape(A.shape)
+    data_correction = False
+    viewA = A.reshape(-1).copy()
+    viewB = B.reshape(-1)
+    # To avoid miss judgement about numpy.nan
+    if np.isnan(viewA).any() or np.isnan(viewB).any():
+        data_correction = True
+        for idx,(I,J) in enumerate(zip(viewA,viewB)):
+            if np.isnan(I+J):       # operation with np.nan become np.nan
+                viewA[idx] = viewB[idx] = 0.0
+       # << If allow detect by nan and float then use below code, >>
+       # for idx,(I,J) in enumerate(zip(viewA,viewB)):
+       #     if   np.isnan(I) and np.isnan(J):
+       #         print('{} A {} => B {}'.format(idx,viewA[idx],viewB[idx]))
+       #         viewA[idx] = viewB[idx] = 0.0
+       #     elif np.isnan(I) :
+       #         print('{} A {} => B {}'.format(idx,viewA[idx],viewB[idx]))
+       #         viewA[idx] = J
+       #     elif np.isnan(J) :
+       #         print('{} A {} => B {}'.format(idx,viewA[idx],viewB[idx]))
+       #         viewB[idx] = I
+    # Create differences table
+    diff = [ __f2i_union(I).uint==__f2i_union(J).uint for I,J in zip(viewA,viewB) ]
+    return np.asarray(diff).reshape(A.shape), data_correction
+#    assert len(A.reshape(-1))==len(B.reshape(-1)),'Mismatch length btn A and B'
+#    diff = [ __f2i_union(I).uint==__f2i_union(J).uint for I,J in zip(A.reshape(-1),B.reshape(-1)) ]
+#    return np.asarray(diff).reshape(A.shape)
 
 # << Generating float32 patterns at random >>
 # Calculate inference result of Before or After of SoftMax
@@ -105,6 +132,7 @@ fault_injection_table = []
 patSerrialNos         = set()
 subsum = 0
 RetryNo     = 0
+overflows   = 0
 while True:
     print('* << Try {:06d} >> fault simulation started'.format(RetryNo))
     detects = 0
@@ -118,10 +146,14 @@ while True:
         beforeSMax, afterSMax = forward.infer(Test_Patterns)
 
         # Calculate fault differencial function
-        diffA = faultDiff(AfterSMax,  afterSMax)
-        diffB = faultDiff(BeforeSMax.data, beforeSMax.data)
+##      diffA, data_correctionA = faultDiff(AfterSMax,  afterSMax)
+        diffB, data_correctionB = faultDiff(BeforeSMax.data, beforeSMax.data)
         diff  = ~diffB  # True : propagated fault / False : disappearance fault
                         # diff.shape : ( batch, output_nodes )
+        ovflag= ''
+        if args.debug and data_correctionB:
+            overflows += 1
+            ovflag= 'OVF-{:06d}'.format(overflows)
 
         # Choice test pattern to detect fault point
         if diff.any():  # case detected
@@ -139,8 +171,8 @@ while True:
                 detects += 1
                 SerrialNo = detPtNo + RetryNo * var.batch
                 patSerrialNos.add(SerrialNo)
-                print('> detect fault faultNo={:6d} detPtNo={:6d} detects={:6d} spec={}'.format(
-                    var.n, SerrialNo, detects, spec[1:]))
+                print('> detect try={:3d} faultNo={:6d} detPtNo={:6d} detects={:6d} spec={} {}'.format(
+                    RetryNo, var.n, SerrialNo, detects, spec[1:], ovflag))
         elif 0: # case not detected, inserted faults disappeared, discard the patterns
             print('* Matched fault insertion run and normal system run, Discard')
 
